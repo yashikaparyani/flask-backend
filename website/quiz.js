@@ -155,35 +155,50 @@ function nextQuestion(){
         endQuiz();
     }
 }
-let leaderboard =[];
-fetch("http://127.0.0.1:5501/leaderboard")
-    .then((response) => {
-        if (!response.ok) {
-            throw new Error(`HTTP error! Status: ${response.status}`);
-        }
-        return response.json();
-    })
-    .then((data) => {
-        console.log("Fetched Data:", data);  
-        updateLeaderboardUI(data);  // Is function se UI update hoga
-    })
-    .catch((error) => console.error("Error fetching leaderboard:", error));
-fetch('http://127.0.0.1:5501/leaderboard')
-    .then(response => response.json())
-    .then(data => {
-        // Display leaderboard data in UI
-        console.log(data);
-    })
-    .catch(error => console.error('Error:', error));
+const BACKEND_URL = 'https://flask-backend-9bjs.onrender.com';
 
-    fetch('http://127.0.0.1:5501/stats')
+function submitScore(username, score) {
+    fetch(`https://flask-backend-9bjs.onrender.com/leaderboard`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ name: username, score: score }),
+    })
     .then(response => response.json())
     .then(data => {
-        // Display percentage data in UI
-        console.log(data);
+        console.log('Score submitted:', data);
+        getLeaderboard(); // Refresh leaderboard after submission
     })
-    .catch(error => console.error('Error:', error));
-  
+    .catch(error => {
+        console.error('Error submitting score:', error);
+    });
+}
+
+function getLeaderboard() {
+    fetch(`https://flask-backend-9bjs.onrender.com/leaderboard`)
+    .then(response => response.json())
+    .then(data => {
+        const leaderboardList = document.getElementById('leaderboard');
+        leaderboardList.innerHTML = ''; // Clear existing list
+
+        data.forEach(entry => {
+            const listItem = document.createElement('li');
+            listItem.textContent = `${entry.name}: ${entry.score}`;
+            leaderboardList.appendChild(listItem);
+        });
+    })
+    .catch(error => {
+        console.error('Error fetching leaderboard:', error);
+    });
+}
+
+// Example call when quiz ends (you’ll call these from your quiz logic)
+document.getElementById('submit-btn').addEventListener('click', () => {
+    const username = document.getElementById('username').value;
+    const score = parseInt(document.getElementById('score').textContent);
+    submitScore(username, score);
+});
 
 
 
