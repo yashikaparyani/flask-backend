@@ -1,0 +1,135 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: "Inter", sans-serif;
+}
+
+body {
+    background-color: #f5f5dc;
+    transition: background 0.3s ease;
+}
+
+.nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 50px;
+    background-color: #fff;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+
+.nav ul {
+    list-style: none;
+    display: flex;
+}
+
+.nav ul li {
+    margin-right: 30px;
+}
+
+.nav ul li a {
+    text-decoration: none;
+    color: #031273;
+    font-weight: 500;
+    transition: color 0.3s ease;
+}
+
+.nav ul li a:hover {
+    color: #f39c12;
+}
+
+.hero {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 80px;
+    background: linear-gradient(to right, #031273, #5a67d8);
+    color: white;
+    border-radius: 10px;
+    margin: 20px;
+}
+
+.hero .content-left h1 {
+    font-size: 50px;
+}
+
+.hero .content-left p {
+    font-size: 18px;
+    margin: 15px 0;
+}
+
+.features {
+    display: flex;
+    justify-content: space-around;
+    padding: 50px;
+    flex-wrap: wrap;
+}
+
+.product {
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    text-align: center;
+    box-shadow: 0 5px 10px rgba(0,0,0,0.2);
+    transition: transform 0.3s ease;
+    gap:20px;
+}
+
+.product:hover {
+    transform: translateY(-10px);
+}
+
+.testimonials {
+    text-align: center;
+    padding: 50px;
+    background-color: #f8f9fa;
+}
+
+.testimonial-card {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    margin: 10px;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+}
+
+footer {
+    background: #031273;
+    color: white;
+    text-align: center;
+    padding: 20px;
+}
+
+/* Dark Mode Styling */
+.dark-mode {
+    background-color: #1e1e1e;
+    color: white;
+}
+
+.dark-mode .nav {
+    background-color: #2a2a2a;
+    box-shadow: none;
+}
+
+.dark-mode .nav ul li a {
+    color: #f8f9fa;
+}
+
+.dark-mode .hero {
+    background: linear-gradient(to right, #282828, #3d3d3d);
+}
+
+.dark-mode .product {
+    background: #2a2a2a;
+    color: white;
+}
+
+.dark-mode .testimonial-card {
+    background: #333;
+    color: white;
+}
+
+.dark-mode footer {
+    background: #111;
+}

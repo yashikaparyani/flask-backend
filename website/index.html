@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QcOnnect</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@4.2.0/fonts/remixicon.css" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header class="nav">
+        <div class="nav-part-1">
+            <h1>Qnect</h1>
+            <ul>
+                <li><a href="#">Product</a></li>
+                <li><a href="#">Solutions</a></li>
+                <li><a href="#">Pricing</a></li>
+                <li><a href="#">Resources</a></li>
+                <li><a href="#">Enterprise</a></li>
+            </ul>
+        </div>
+        <div class="nav-part-2">
+            <button class="btn-login" style="background-color: rgb(8, 90, 8); color: white; padding:10px;">LOGIN</button>
+            <button class="btn-signup" style="background-color: rgb(8, 90, 8); color: white; padding:10px;">Sign Up</button>
+            <button class="toggle-dark-mode"><i class="ri-moon-line"></i></button>
+        </div>
+    </header>
+
+    <section class="hero">
+        <div class="content-left">
+            <h5>The easiest way to make your meetings interactive</h5>
+            <h1>Welcome to Qnect</h1>
+            <p>Engage your participants with live polls, Q&A, quizzes, and word clouds—whether you meet in the office, online, or in-between.</p>
+            <p style="font-size:30px; font-weight: bold; font-style: italic; text-decoration: underline;">Scan the QR code to log in and start the quiz!</p>
+            <button class="btn" style= "padding:10px">Get Started for Free</button>
+        </div>
+        <div class="content-right" id="qrcode">
+            <script src="https://cdn.rawgit.com/davidshimjs/qrcodejs/gh-pages/qrcode.min.js"></script>
+            <script>
+                var qrcode = new QRCode(document.getElementById("qrcode"), {
+                    text: "https://qconnectt.netlify.app/website/login.html", // Local URL for testing, change it to your live URL after hosting
+                    width: 256,
+                    height: 256,
+                    colorDark : "#000000",
+                    colorLight : "#ffffff",
+                    correctLevel : QRCode.CorrectLevel.H
+                });
+            </script>
+        </div>
+    </section>
+
+    <section class="features">
+        <div class="product">
+            <img src="images/two.jpg" alt="Quizzes">
+            <h4>Quizzes</h4>
+            <p>Make an interactive quiz for your meeting</p>
+        </div>
+        <div class="product">
+            <img src="images/five.jpg" alt="Analytics">
+            <h4>Analytics</h4>
+            <p>Understand how successful your meetings are</p>
+        </div>
+        <div class="product">
+            <img src="images/one.jpg" alt="Live polls">
+            <h4>Live Polls</h4>
+            <p>Create your polls in seconds</p>
+        </div>
+        <div class="product">
+            <img src="images/four.jpg" alt="Q&A">
+            <h4>Live Q&A</h4>
+            <p>Collect and answer questions live</p>
+        </div>
+    </section>
+
+    <section class="testimonials">
+        <h2>What Our Users Say</h2>
+        <div class="testimonial-card">
+            <p>"QcOnnect has wonderful collection of quizzes"</p>
+            <h4>Diya Rathore</h4>
+        </div>
+        <div class="testimonial-card">
+            <p>"A must-have tool for Seminars"</p>
+            <h4>- riya Sharma</h4>
+        </div>
+    </section>
+
+    <footer>
+        <p>© 2025 Qnect. All rights reserved.</p>
+        <div class="social-icons">
+            <i class="ri-facebook-fill"></i>
+            <i class="ri-instagram-fill"></i>
+            <i class="ri-twitter-fill"></i>
+        </div>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>
