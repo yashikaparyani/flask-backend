@@ -160,6 +160,21 @@ function saveScore() {
     });
 }
 
+function saveScore() {
+    let scores = JSON.parse(localStorage.getItem("leaderboard")) || [];
+
+    let username = localStorage.getItem("username") || "Guest";
+    let scoreEntry = { name: username, score: score };
+
+    scores.push(scoreEntry);
+    scores.sort((a, b) => b.score - a.score);
+    scores = scores.slice(0, 5);
+    localStorage.setItem("leaderboard", JSON.stringify(scores));
+
+    // Add this line to push to backend
+    submitScore(username, score);
+}
+
 document.addEventListener("DOMContentLoaded", () => {
     startQuiz();
 });
