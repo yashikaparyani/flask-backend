@@ -1,0 +1,6 @@
+services:
+  - type: web
+    name: quiz-leaderboard
+    env: python
+    buildCommand: ""
+    startCommand: python app.py
