@@ -1,17 +1,19 @@
-document.addEventListener("DOMContentLoaded", () => {
-    let leaderboard = JSON.parse(localStorage.getItem("leaderboard")) || [];
-    const leaderboardContainer = document.getElementById("leaderboard");
-    console.log("leaderboard", leaderboardContainer);
+const BACKEND_URL = 'https://flask-backend-9bjs.onrender.com'; // Replace with your actual backend URL
 
-    if (leaderboard.length === 0) {
-        leaderboardContainer.innerHTML = "<p>No scores yet!</p>";
-    } else {
-        leaderboardContainer.innerHTML = leaderboard.map((entry, index) => 
-            `<p><strong>#${index + 1}</strong> ${entry.username} - ${entry.score}</p>`
-        ).join("");
-    }
+document.addEventListener("DOMContentLoaded", () => {
+    fetch(`${BACKEND_URL}/leaderboard`)
+        .then(response => response.json())
+        .then(data => {
+            const leaderboardList = document.getElementById("leaderboard");
+            leaderboardList.innerHTML = "";
+
+            data.forEach(entry => {
+                const listItem = document.createElement("li");
+                listItem.textContent = `${entry.name}: ${entry.score}`;
+                leaderboardList.appendChild(listItem);
+            });
+        })
+        .catch(error => {
+            console.error("Error fetching leaderboard:", error);
+        });
 });
-function resetLeaderboard() {
-    localStorage.removeItem("leaderboard"); // Removes stored scores
-    document.getElementById("leaderboard").innerHTML = "<p>Leaderboard Cleared!</p>"; // UI update
-}
