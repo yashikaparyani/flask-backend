@@ -28,4 +28,4 @@ def get_leaderboard():
     return jsonify(sorted_results[:10])
 
 if __name__ == '__main__':
-    app.run()
+    app.run(host="0.0.0.0", port=10000)
