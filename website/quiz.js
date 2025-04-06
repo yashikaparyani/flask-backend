@@ -28,8 +28,10 @@ let questions = [
 
 let currentQuestionIndex = 0;
 let score = 0;
-let timerInterval;
 let timeleft = 10;
+let timerInterval;
+
+const BACKEND_URL = 'https://flask-backend-9bjs.onrender.com'; // your backend URL
 
 const questionElement = document.getElementById("question");
 const optionsElement = document.getElementById("options");
@@ -64,7 +66,6 @@ function showQuestion() {
 function selectAnswer(index) {
     clearInterval(timerInterval);
     let correctIndex = questions[currentQuestionIndex].answer;
-
     if (index === correctIndex) {
         score++;
         optionsElement.children[index].classList.add("correct");
@@ -72,7 +73,6 @@ function selectAnswer(index) {
         optionsElement.children[index].classList.add("wrong");
         optionsElement.children[correctIndex].classList.add("correct");
     }
-
     disableOptions();
     nextButton.classList.remove("hide");
 }
@@ -108,14 +108,17 @@ function endQuiz() {
     });
     quizContainer.appendChild(leaderboardBtn);
 
-    const timerEl = document.getElementById("timer");
-    if (timerEl) timerEl.style.display = "none";
+    const timerElement = document.getElementById("timer");
+    if (timerElement) {
+        timerElement.style.display = "none";
+    }
 }
 
 function startTimer() {
     clearInterval(timerInterval);
     timeleft = 10;
     document.getElementById("time-left").innerText = timeleft;
+
     timerInterval = setInterval(() => {
         timeleft--;
         document.getElementById("time-left").innerText = timeleft;
@@ -135,44 +138,28 @@ function nextQuestion() {
     }
 }
 
-// Setup username if not set
+// Local storage username
 let username = localStorage.getItem("username");
 if (!username) {
     username = prompt("Enter your name") || "Guest";
-    localStorage.setItem("username", username); // Fixed typo here
+    localStorage.setItem("username", username);
 }
 
-const BACKEND_URL = 'https://flask-backend-9bjs.onrender.com';
-
 function saveScore() {
-    const scoreEntry = { name: username, score: score };
     fetch(`${BACKEND_URL}/leaderboard`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(scoreEntry)
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ name: username, score: score }),
     })
-    .then(response => response.json())
-    .then(data => {
-        console.log("Score submitted successfully", data);
-    })
-    .catch(error => {
-        console.error("Failed to submit score:", error);
-    });
-}
-
-function saveScore() {
-    let scores = JSON.parse(localStorage.getItem("leaderboard")) || [];
-
-    let username = localStorage.getItem("username") || "Guest";
-    let scoreEntry = { name: username, score: score };
-
-    scores.push(scoreEntry);
-    scores.sort((a, b) => b.score - a.score);
-    scores = scores.slice(0, 5);
-    localStorage.setItem("leaderboard", JSON.stringify(scores));
-
-    // Add this line to push to backend
-    submitScore(username, score);
+        .then(res => res.json())
+        .then(data => {
+            console.log("Score submitted:", data);
+        })
+        .catch(err => {
+            console.error("Error submitting score:", err);
+        });
 }
 
 document.addEventListener("DOMContentLoaded", () => {
