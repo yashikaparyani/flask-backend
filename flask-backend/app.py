@@ -14,7 +14,7 @@ def home():
 
 #Login route
 
-@app.route('/login', methods=['POST']) 
+@app.route('/login', methods=['GET','POST']) 
 def login(): 
     data = request.get_json() 
     name = data.get('name') 
@@ -30,7 +30,7 @@ def login():
 
 #Submit score to leaderboard
 
-@app.route('/submit_score', methods=['POST']) 
+@app.route('/submit_score', methods=['GET','POST']) 
 def submit_score(): 
     data = request.get_json() 
     name = data.get('name') 
@@ -45,10 +45,19 @@ def submit_score():
 
 #Get leaderboard
 
-@app.route('/leaderboard', methods=['GET']) 
-def leaderboard(): 
-    scores = leaderboard_table.all() 
-    return jsonify(scores), 200
+@app.route('/leaderboard', methods=['GET', 'POST'])
+def leaderboard():
+    if request.method == 'GET':
+        data = db.all()
+        sorted_data = sorted(data, key=lambda x: x['score'], reverse=True)
+        return jsonify(sorted_data)
+    
+    if request.method == 'POST':
+        data = request.get_json()
+        if not data or 'name' not in data or 'score' not in data:
+            return jsonify({'error': 'Invalid data'}), 400
+        db.insert({'name': data['name'], 'score': data['score']})
+        return jsonify({'message': 'Score saved successfully'})
 
 #Reset leaderboard
 
