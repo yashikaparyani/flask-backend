@@ -45,7 +45,7 @@ function startQuiz() {
 }
 
 function showQuestion() {
-    let questionData = questions[currentQuestionIndex];
+    const questionData = questions[currentQuestionIndex];
     questionElement.innerText = questionData.question;
     optionsElement.innerHTML = "";
 
@@ -64,7 +64,7 @@ function showQuestion() {
 
 function selectAnswer(index) {
     clearInterval(timerInterval);
-    let correctIndex = questions[currentQuestionIndex].answer;
+    const correctIndex = questions[currentQuestionIndex].answer;
     if (index === correctIndex) {
         score++;
         optionsElement.children[index].classList.add("correct");
@@ -98,13 +98,12 @@ function endQuiz() {
     scoreElement.classList.remove("hide");
     scoreElement.innerText = `Final Score: ${score} / ${questions.length}`;
 
-    let leaderboardBtn = document.createElement("button");
+    const leaderboardBtn = document.createElement("button");
     leaderboardBtn.innerText = "View Leaderboard";
     leaderboardBtn.classList.add("btn");
     leaderboardBtn.addEventListener("click", () => {
         saveToBackend();
     });
-
     quizContainer.appendChild(leaderboardBtn);
 
     const timerElement = document.getElementById("timer");
@@ -113,26 +112,10 @@ function endQuiz() {
     }
 }
 
-const userName = localStorage.getItem("username") || prompt("Enter your name:");
-    if (userName) {
-        localStorage.setItem("username", userName);
-        fetch("https://flask-backend-9bjs.onrender.com/submit-score", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({ name: userName, score: score })
-        })
-        .then(response => response.json())
-        .then(data => {
-            console.log("Score submit:", data);
-        })
-        .catch(error => {
-            console.error("Error submitting score:", error);
-        });
-    }
 function saveToBackend() {
-    const username = localStorage.getItem("username") || "Guest";
+    const username = localStorage.getItem("username") || prompt("Enter your name") || "Guest";
+    localStorage.setItem("username", username);
+
     fetch(`${BACKEND_URL}/leaderboard`, {
         method: "POST",
         headers: {
@@ -163,16 +146,13 @@ function startTimer() {
         document.getElementById("time-left").innerText = timeleft;
         if (timeleft === 0) {
             clearInterval(timerInterval);
-            nextButton.click(); // Trigger next automatically
+            nextButton.click();
         }
     }, 1000);
 }
 
 document.addEventListener("DOMContentLoaded", () => {
-    let username = localStorage.getItem("username");
-    if (!username) {
-        username = prompt("Enter your name") || "Guest";
-        localStorage.setItem("username", username);
-    }
+    const username = localStorage.getItem("username") || prompt("Enter your name") || "Guest";
+    localStorage.setItem("username", username);
     startQuiz();
 });
