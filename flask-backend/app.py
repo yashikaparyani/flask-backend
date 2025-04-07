@@ -1,11 +1,13 @@
 from flask import Flask, request, jsonify 
 from flask_cors import CORS 
 from tinydb import TinyDB, Query
+import os
 
 app = Flask(__name__)
 CORS(app)  # Enable CORS for all routes
 
-db = TinyDB('leaderboard.json') 
+db_path = os.path.join('/tmp','leaderboard.json')
+db = TinyDB('db_path') 
 leaderboard_table = db.table('scores')
 
 @app.route('/') 
