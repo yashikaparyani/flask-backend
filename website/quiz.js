@@ -28,16 +28,15 @@ let questions = [
 
 let currentQuestionIndex = 0;
 let score = 0;
-let timeleft = 10;
 let timerInterval;
-
-const BACKEND_URL = 'https://flask-backend-9bjs.onrender.com'; // your backend URL
 
 const questionElement = document.getElementById("question");
 const optionsElement = document.getElementById("options");
 const nextButton = document.getElementById("next-btn");
 const scoreElement = document.getElementById("score");
 const quizContainer = document.querySelector(".quiz-container");
+
+const BACKEND_URL = "https://flask-backend-9bjs.onrender.com";
 
 function startQuiz() {
     currentQuestionIndex = 0;
@@ -93,19 +92,19 @@ nextButton.addEventListener("click", () => {
 });
 
 function endQuiz() {
-    clearInterval(timerInterval);
     questionElement.innerText = "Quiz Completed!";
     optionsElement.innerHTML = "";
     nextButton.classList.add("hide");
+    scoreElement.classList.remove("hide");
     scoreElement.innerText = `Final Score: ${score} / ${questions.length}`;
 
-    const leaderboardBtn = document.createElement("button");
+    let leaderboardBtn = document.createElement("button");
     leaderboardBtn.innerText = "View Leaderboard";
     leaderboardBtn.classList.add("btn");
     leaderboardBtn.addEventListener("click", () => {
-        saveScore();
-        window.location.href = "leaderboard.html";
+        saveToBackend();
     });
+
     quizContainer.appendChild(leaderboardBtn);
 
     const timerElement = document.getElementById("timer");
@@ -114,54 +113,66 @@ function endQuiz() {
     }
 }
 
+const userName = localStorage.getItem("username") || prompt("Enter your name:");
+    if (userName) {
+        localStorage.setItem("username", userName);
+        fetch("https://flask-backend-9bjs.onrender.com/submit-score", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ name: userName, score: score })
+        })
+        .then(response => response.json())
+        .then(data => {
+            console.log("Score submit:", data);
+        })
+        .catch(error => {
+            console.error("Error submitting score:", error);
+        });
+    }
+function saveToBackend() {
+    const username = localStorage.getItem("username") || "Guest";
+    fetch(`${BACKEND_URL}/leaderboard`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+            name: username,
+            score: score
+        }),
+    })
+    .then(res => res.json())
+    .then(data => {
+        console.log("Score saved to backend:", data);
+        window.location.href = "leaderboard.html";
+    })
+    .catch(err => {
+        console.error("Failed to save score:", err);
+    });
+}
+
+let timeleft = 10;
 function startTimer() {
     clearInterval(timerInterval);
     timeleft = 10;
     document.getElementById("time-left").innerText = timeleft;
-
     timerInterval = setInterval(() => {
         timeleft--;
         document.getElementById("time-left").innerText = timeleft;
         if (timeleft === 0) {
             clearInterval(timerInterval);
-            nextQuestion();
+            nextButton.click(); // Trigger next automatically
         }
     }, 1000);
 }
 
-function nextQuestion() {
-    currentQuestionIndex++;
-    if (currentQuestionIndex < questions.length) {
-        showQuestion();
-    } else {
-        endQuiz();
-    }
-}
-
-// Local storage username
-let username = localStorage.getItem("username");
-if (!username) {
-    username = prompt("Enter your name") || "Guest";
-    localStorage.setItem("username", username);
-}
-
-function saveScore() {
-    fetch(`${BACKEND_URL}/leaderboard`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ name: username, score: score }),
-    })
-        .then(res => res.json())
-        .then(data => {
-            console.log("Score submitted:", data);
-        })
-        .catch(err => {
-            console.error("Error submitting score:", err);
-        });
-}
-
 document.addEventListener("DOMContentLoaded", () => {
+    let username = localStorage.getItem("username");
+    if (!username) {
+        username = prompt("Enter your name") || "Guest";
+        localStorage.setItem("username", username);
+    }
     startQuiz();
 });
