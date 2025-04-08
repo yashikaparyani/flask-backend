@@ -114,7 +114,7 @@ function endQuiz() {
 
 function saveToBackend() {
     const username = localStorage.getItem("username") || "Guest";
-    fetch("https://flask-backend-xxxx.onrender.com/leaderboard", {  // Replace xxxx with your Render backend subdomain
+    fetch("https://flask-backend-9bjs.onrender.com/leaderboard", {  // Replace xxxx with your Render backend subdomain
         method: "POST",
         headers: {
             "Content-Type": "application/json"
