@@ -4,8 +4,7 @@ import sqlite3
 import os
 
 app = Flask(__name__)
-CORS(app,
-     origins=["https://extraordinary-dragon-1a19a7.netlify.app"])
+CORS(app, origins=["https://extraordinary-dragon-1a19a7.netlify.app"])
 
 DB_PATH = os.path.join(os.path.dirname(__file__), 'leaderboard.db')
 
@@ -17,6 +16,15 @@ def init_db():
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             name TEXT NOT NULL,
             score INTEGER NOT NULL
+        )
+    ''')
+    # Optional: Create users table for login/register
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS users (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            email TEXT NOT NULL,
+            phone TEXT NOT NULL
         )
     ''')
     conn.commit()
@@ -56,7 +64,26 @@ def get_leaderboard():
     leaderboard = [{"name": name, "score": score} for name, score in results]
     return jsonify(leaderboard)
 
-if __name__ == '__main__':
+@app.route('/login', methods=['POST'])
+def login():
+    data = request.get_json()
+    name = data.get('name')
+    email = data.get('email')
+    phone = data.get('phone')
+
+    if not name or not email or not phone:
+        return jsonify({"error": "Missing fields"}), 400
+
+    # Optionally store login info (if required)
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    cursor.execute("INSERT INTO users (name, email, phone) VALUES (?, ?, ?)", (name, email, phone))
+    conn.commit()
+    conn.close()
+
+    return jsonify({"message": "Login successful"}), 200
+
+if __name__== '__main__':
     from os import environ
-    port = int(environ.get("PORT",5000))
+    port = int(environ.get("PORT", 5000))
     app.run(host='0.0.0.0', port=port)
