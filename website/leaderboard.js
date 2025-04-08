@@ -1,19 +1,23 @@
-const BACKEND_URL = 'https://flask-backend-9bjs.onrender.com'; // Replace with your actual backend URL
+document.addEventListener('DOMContentLoaded', () => {
+    const leaderboardList = document.getElementById('leaderboard-list');
 
-document.addEventListener("DOMContentLoaded", () => {
-    fetch(`${BACKEND_URL}/leaderboard`)
-        .then(response => response.json())
+    fetch('https://flask-backend-9bjs.onrender.com/leaderboard')  // Use your backend URL here
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Failed to fetch leaderboard data');
+            }
+            return response.json();
+        })
         .then(data => {
-            const leaderboardList = document.getElementById("leaderboard");
-            leaderboardList.innerHTML = "";
+            leaderboardList.innerHTML = '';
 
-            data.forEach(entry => {
-                const listItem = document.createElement("li");
-                listItem.textContent = `${entry.name}: ${entry.score}`;
-                leaderboardList.appendChild(listItem);
+            data.forEach((entry, index) => {
+                const li = document.createElement('li');
+                li.textContent = `${index + 1}. ${entry.name} - ${entry.score}`;
+                leaderboardList.appendChild(li);
             });
         })
         .catch(error => {
-            console.error("Error fetching leaderboard:", error);
+            console.error('Error loading leaderboard:', error);
         });
 });

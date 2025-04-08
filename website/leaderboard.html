@@ -1,17 +1,78 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>Leaderboard</title>
-    <link rel="stylesheet" href="leaderboard.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(to right, #667eea, #764ba2);
+            color: #fff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 40px 20px;
+        }
+
+        h2 {
+            font-size: 2.5rem;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .leaderboard-container {
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 30px;
+            max-width: 500px;
+            width: 100%;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+        }
+
+        ol {
+            list-style: none;
+            padding: 0;
+            margin: 0 0 30px 0;
+        }
+
+        li {
+            background-color: rgba(255, 255, 255, 0.15);
+            padding: 12px 20px;
+            margin-bottom: 10px;
+            border-radius: 10px;
+            font-weight: 600;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        button {
+            background-color: #fff;
+            color: #333;
+            border: none;
+            border-radius: 10px;
+            padding: 10px 20px;
+            margin: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background 0.3s;
+        }
+
+        button:hover {
+            background-color: #f0f0f0;
+        }
+    </style>
 </head>
 <body>
+    <h2>Global Leaderboard</h2>
     <div class="leaderboard-container">
-        <h2>Leaderboard</h2>
-        <div id="leaderboard"></div>
-        <button onclick="window.location.href='quiz.html'">Try Again</button>
-        <button onclick="resetLeaderboard()">Reset Leaderboard</button>
+        <ol id="leaderboard-list"></ol>
+        <div style="text-align: center;">
+            <button onclick="window.location.href='quiz.html'">Try Again</button>
+            <button onclick="resetLeaderboard()">Reset Leaderboard</button>
+        </div>
     </div>
 
     <script src="leaderboard.js"></script>

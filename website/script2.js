@@ -1,24 +1,43 @@
+document.addEventListener("DOMContentLoaded", function () {
+    const form = document.getElementById("login-form");
 
-document.getElementById("login-form")?.addEventListener("submit", function(event) {
-    event.preventDefault();
-    let username =document.getElementById("username").value;
-    if (!username.trim()){
-        alert("please enter your name");
-        return;
-    }
-    localStorage.setItem("username", username);
-    alert("Login successful!");
-    window.location.href="quiz.html ";
-});
+    form.addEventListener("submit", function (e) {
+        e.preventDefault();
 
-document.getElementById("signup-form")?.addEventListener("submit", function(event) {
-    event.preventDefault();
-    let username =document.getElementById("username").value;
-    if (!username.trim()){
-        alert("please enter your name");
-        return;
-    }
-    localStorage.setItem("username", username);
-    alert("Sign up successful!");
-    window.location.href="quiz.html ";
+        const username = document.getElementById("username").value.trim();
+        const email = document.getElementById("login-email").value.trim();
+        const password = document.getElementById("login-password").value.trim();
+        const phone = document.getElementById("login-number").value.trim();
+
+        if (!username || !email || !password || !phone) {
+            alert("Please fill in all fields.");
+            return;
+        }
+
+        // Save the username to localStorage for use in quiz.js
+        localStorage.setItem("username", username);
+
+        // Optional: Send login data to backend (if login verification is implemented)
+        fetch("https://flask-backend-9bjs.onrender.com/login", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ username, email, password, phone }),
+        })
+            .then(response => response.json())
+            .then(data => {
+                console.log("Login response:", data);
+                if (data.success) {
+                    alert("Login successful!");
+                    window.location.href = "quiz.html";
+                } else {
+                    alert("Login failed. Please try again.");
+                }
+            })
+            .catch(error => {
+                console.error("Error during login:", error);
+                alert("An error occurred. Please try again later.");
+            });
+    });
 });
