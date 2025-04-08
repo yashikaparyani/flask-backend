@@ -4,40 +4,39 @@ document.addEventListener("DOMContentLoaded", function () {
     form.addEventListener("submit", function (e) {
         e.preventDefault();
 
-        const username = document.getElementById("username").value.trim();
+        const name = document.getElementById("username").value.trim();
         const email = document.getElementById("login-email").value.trim();
         const password = document.getElementById("login-password").value.trim();
         const phone = document.getElementById("login-number").value.trim();
 
-        if (!username || !email || !password || !phone) {
+        if (!name || !email || !password || !phone) {
             alert("Please fill in all fields.");
             return;
         }
 
         // Save the username to localStorage for use in quiz.js
-        localStorage.setItem("username", username);
+        localStorage.setItem("username", name);
 
-        // Optional: Send login data to backend (if login verification is implemented)
         fetch("https://flask-backend-9bjs.onrender.com/login", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
             },
-            body: JSON.stringify({ username, email, password, phone }),
+            body: JSON.stringify({ name, email, phone }), // MATCHING BACKEND
         })
-            .then(response => response.json())
-            .then(data => {
-                console.log("Login response:", data);
-                if (data.success) {
-                    alert("Login successful!");
-                    window.location.href = "quiz.html";
-                } else {
-                    alert("Login failed. Please try again.");
-                }
-            })
-            .catch(error => {
-                console.error("Error during login:", error);
-                alert("An error occurred. Please try again later.");
-            });
+        .then(response => response.json())
+        .then(data => {
+            console.log("Login response:", data);
+            if (data.success) {
+                alert("Login successful!");
+                window.location.href = "quiz.html";
+            } else {
+                alert("Login failed: " + (data.error || "Please try again."));
+            }
+        })
+        .catch(error => {
+            console.error("Error during login:", error);
+            alert("An error occurred. Please try again later.");
+        });
     });
 });
