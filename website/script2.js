@@ -22,7 +22,10 @@ document.addEventListener("DOMContentLoaded", function () {
             headers: {
                 "Content-Type": "application/json",
             },
-            body: JSON.stringify({ name, email, phone }), // MATCHING BACKEND
+            body: JSON.stringify({ 
+                name: username,
+                 email:email,
+                 phone: phone }), // MATCHING BACKEND
         })
         .then(response => response.json())
         .then(data => {
