@@ -26,4 +26,32 @@ document.getElementById('login-form').addEventListener('submit', function (e) {
         console.error('Error during login:', error);
         alert("An error occurred. Please try again later.");
     });
+});document.getElementById('login-form').addEventListener('submit', function (e) {
+    e.preventDefault();
+
+    const name = document.getElementById('username').value;
+    const email = document.getElementById('login-email').value;
+    const phone = document.getElementById('login-number').value;
+
+    fetch('https://flask-backend-9bjs.onrender.com/login', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ name, email, phone })
+    })
+    .then(response => response.json())
+    .then(data => {
+        console.log('Login response:', data);
+        if (data.message === "Login successful") {
+            alert("Login successful!");
+            window.location.href = 'quiz.html';
+        } else {
+            alert("Login failed. Please try again.");
+        }
+    })
+    .catch(error => {
+        console.error('Error during login:', error);
+        alert("An error occurred. Please try again later.");
+    });
 });
