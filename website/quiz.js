@@ -98,11 +98,15 @@ function endQuiz() {
     scoreElement.classList.remove("hide");
     scoreElement.innerText = `Final Score: ${score} / ${questions.length}`;
 
+    // Auto submit the score
+    saveToBackend();
+
+    // Add leaderboard button (still optional)
     const leaderboardBtn = document.createElement("button");
     leaderboardBtn.innerText = "View Leaderboard";
     leaderboardBtn.classList.add("btn");
     leaderboardBtn.addEventListener("click", () => {
-        saveToBackend();
+        window.location.href = "leaderboard.html";
     });
     quizContainer.appendChild(leaderboardBtn);
 
@@ -114,7 +118,9 @@ function endQuiz() {
 
 function saveToBackend() {
     const username = localStorage.getItem("username") || "Guest";
-    fetch("https://flask-backend-9bjs.onrender.com/leaderboard", {  // Replace xxxx with your Render backend subdomain
+    console.log("Submitting score to backend:", username, score);
+
+    fetch(`${BACKEND_URL}/leaderboard`, {
         method: "POST",
         headers: {
             "Content-Type": "application/json"
@@ -127,7 +133,6 @@ function saveToBackend() {
     .then(res => res.json())
     .then(data => {
         console.log("Score saved:", data);
-        window.location.href = "leaderboard.html";
     })
     .catch(err => {
         console.error("Failed to save score:", err);
