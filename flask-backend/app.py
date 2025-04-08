@@ -1,75 +1,59 @@
-from flask import Flask, request, jsonify 
-from flask_cors import CORS 
-from tinydb import TinyDB, Query
+from flask import Flask, request, jsonify
+from flask_cors import CORS
+import sqlite3
 import os
 
 app = Flask(__name__)
-CORS(app)  # Enable CORS for all routes
+CORS(app)
 
-db_path = os.path.join('/tmp','leaderboard.json')
-db = TinyDB('db_path') 
-leaderboard_table = db.table('scores')
+DB_PATH = os.path.join(os.path.dirname(__file__), 'leaderboard.db')
 
-@app.route('/') 
-def home(): 
-    return "Qnect Backend Running"
+def init_db():
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS leaderboard (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            score INTEGER NOT NULL
+        )
+    ''')
+    conn.commit()
+    conn.close()
 
-#Login route
+init_db()
 
-@app.route('/login', methods=['GET','POST']) 
-def login(): 
-    data = request.get_json() 
-    name = data.get('name') 
-    email = data.get('email') 
-    password = data.get('password') 
-    phone = data.get('phone')
+@app.route('/')
+def home():
+    return "Quiz Leaderboard API is Running!"
 
-    if not all([name, email, password, phone]):
-        return jsonify({'message': 'Missing fields'}), 400
-
-    print(f"User Logged In: {name}, {email}, {phone}")
-    return jsonify({'message': 'Login successful'}), 200
-
-#Submit score to leaderboard
-
-@app.route('/submit_score', methods=['GET','POST']) 
-def submit_score(): 
-    data = request.get_json() 
-    name = data.get('name') 
+@app.route('/leaderboard', methods=['POST'])
+def submit_score():
+    data = request.get_json()
+    name = data.get('name')
     score = data.get('score')
 
     if name is None or score is None:
-        return jsonify({'message': 'Missing name or score'}), 400
+        return jsonify({"error": "Missing name or score"}), 400
 
-    leaderboard_table.insert({'name': name, 'score': score})
-    print(f"Score submitted: {name} - {score}")
-    return jsonify({'message': 'Score submitted successfully'}), 200
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    cursor.execute("INSERT INTO leaderboard (name, score) VALUES (?, ?)", (name, score))
+    conn.commit()
+    conn.close()
 
-#Get leaderboard
+    return jsonify({"message": "Score saved successfully"}), 200
 
-@app.route('/leaderboard', methods=['GET', 'POST'])
-def leaderboard():
-    if request.method == 'GET':
-        data = db.all()
-        sorted_data = sorted(data, key=lambda x: x['score'], reverse=True)
-        return jsonify(sorted_data)
-    
-    if request.method == 'POST':
-        data = request.get_json()
-        if not data or 'name' not in data or 'score' not in data:
-            return jsonify({'error': 'Invalid data'}), 400
-        db.insert({'name': data['name'], 'score': data['score']})
-        return jsonify({'message': 'Score saved successfully'})
+@app.route('/leaderboard', methods=['GET'])
+def get_leaderboard():
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    cursor.execute("SELECT name, score FROM leaderboard ORDER BY score DESC LIMIT 10")
+    results = cursor.fetchall()
+    conn.close()
 
-#Reset leaderboard
+    leaderboard = [{"name": name, "score": score} for name, score in results]
+    return jsonify(leaderboard)
 
-@app.route('/reset_leaderboard', methods=['DELETE']) 
-def reset_leaderboard(): 
-    leaderboard_table.truncate() 
-    print("Leaderboard reset.") 
-    return jsonify({'message': 'Leaderboard reset successfully'}), 200
-
-if __name__ == '__main__': 
-    import os
-    port = int(os.environ.get('PORT', 10000))
-    app.run(host='0.0.0.0', port=port)
+if __name__ == '__main__':
+    app.run(debug=True)
