@@ -113,22 +113,20 @@ function endQuiz() {
 }
 
 function saveToBackend() {
-    const username = localStorage.getItem("username") || prompt("Enter your name") || "Guest";
-    localStorage.setItem("username", username);
-
-    fetch(`${BACKEND_URL}/leaderboard`, {
+    const username = localStorage.getItem("username") || "Guest";
+    fetch("https://flask-backend-xxxx.onrender.com/leaderboard", {  // Replace xxxx with your Render backend subdomain
         method: "POST",
         headers: {
-            "Content-Type": "application/json",
+            "Content-Type": "application/json"
         },
         body: JSON.stringify({
             name: username,
             score: score
-        }),
+        })
     })
     .then(res => res.json())
     .then(data => {
-        console.log("Score saved to backend:", data);
+        console.log("Score saved:", data);
         window.location.href = "leaderboard.html";
     })
     .catch(err => {
