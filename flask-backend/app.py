@@ -93,6 +93,16 @@ def get_users():
         {"id": row[0],"name":row[1],"email":row[2],"phone":row[3]}
         for row in users
     ])
+@app.route('/all-leaderboard', methods=['GET'])
+def all_leaderboard():
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM leaderboard")
+    results = cursor.fetchall()
+    conn.close()
+
+    full_data = [{"id": row[0], "name": row[1], "score": row[2]} for row in results]
+    return jsonify(full_data), 200
 
 if __name__== '__main__':
     from os import environ
