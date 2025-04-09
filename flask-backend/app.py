@@ -18,7 +18,6 @@ def init_db():
             score INTEGER NOT NULL
         )
     ''')
-    # Optional: Create users table for login/register
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS users (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -41,9 +40,8 @@ def submit_score():
     data = request.get_json()
     name = data.get('name')
     score = data.get('score')
-    phone = data.get('phone')
 
-    if name is None or score is None or phone is None:
+    if name is None or score is None:
         return jsonify({"error": "Missing name or score"}), 400
 
     conn = sqlite3.connect(DB_PATH)
@@ -75,10 +73,10 @@ def login():
     if not name or not email or not phone:
         return jsonify({"error": "Missing fields"}), 400
 
-    # Optionally store login info (if required)
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
     cursor.execute("INSERT INTO users (name, email, phone) VALUES (?, ?, ?)", (name, email, phone))
+    print(f"saved user: {name},{email},{phone}")
     conn.commit()
     conn.close()
 
