@@ -26,6 +26,13 @@ def init_db():
             phone TEXT NOT NULL
         )
     ''')
+    cursor.execute('''
+    CREATE TABLE IF NOT EXISTS question_stats (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        question_id INTEGER NOT NULL,
+        selected_option TEXT NOT NULL
+    )
+''')
     conn.commit()
     conn.close()
 
@@ -104,6 +111,22 @@ def all_leaderboard():
     full_data = [{"id": row[0], "name": row[1], "score": row[2]} for row in results]
     return jsonify(full_data), 200
 
+@app.route('/test-question-stats')
+def test_question_stats():
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='question_stats'")
+        result = cursor.fetchone()
+        conn.close()
+        if result:
+            return "Table 'question_stats' exists!", 200
+        else:
+            return "Table NOT found.", 404
+    except Exception as e:
+        return str(e), 500
+    
+    
 if __name__== '__main__':
     from os import environ
     port = int(environ.get("PORT", 5000))
