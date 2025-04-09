@@ -82,6 +82,15 @@ def login():
 
     return jsonify({"message": "Login successful"}), 200
 
+@app.route('/get-users', methods=['GET'])
+def get_users():
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM users")
+    users = cursor.fetchall()
+    conn.close()
+    return jsonify(users)
+
 if __name__== '__main__':
     from os import environ
     port = int(environ.get("PORT", 5000))
