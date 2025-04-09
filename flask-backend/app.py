@@ -111,22 +111,61 @@ def all_leaderboard():
     full_data = [{"id": row[0], "name": row[1], "score": row[2]} for row in results]
     return jsonify(full_data), 200
 
-@app.route('/test-question-stats')
-def test_question_stats():
+@app.route('/question-stats', methods=['GET'])
+def question_stats():
     try:
         conn = sqlite3.connect(DB_PATH)
         cursor = conn.cursor()
-        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='question_stats'")
-        result = cursor.fetchone()
+
+        # Get all question IDs and their option counts from question_stats
+        cursor.execute("SELECT question_id, option_selected, count FROM question_stats")
+        results = cursor.fetchall()
         conn.close()
-        if result:
-            return "Table 'question_stats' exists!", 200
-        else:
-            return "Table NOT found.", 404
+
+        stats = {}
+        for qid, option, count in results:
+            if qid not in stats:
+                stats[qid] = {}
+            stats[qid][option] = count
+
+        # Convert counts to percentages
+        percentages = {}
+        for qid in stats:
+            total = sum(stats[qid].values())
+            percentages[qid] = {
+                opt: round((count / total) * 100, 2)
+                for opt, count in stats[qid].items()
+            }
+
+        return jsonify(percentages), 200
+
     except Exception as e:
-        return str(e), 500
+        return jsonify({"error": str(e)}), 500
     
     
+@app.route('/submit-answers', methods=['POST'])
+def submit_answers():
+    data = request.get_json()
+    answers = data.get('answers')
+
+    if not answers:
+        return jsonify({"error": "No answers received"}), 400
+
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+
+    for ans in answers:
+        question_id = ans.get('question_id')
+        selected_option = ans.get('selected_option')
+        if question_id is not None and selected_option is not None:
+            cursor.execute("INSERT INTO question_stats (question_id, selected_option) VALUES (?, ?)", (question_id, selected_option))
+
+    conn.commit()
+    conn.close()
+
+    return jsonify({"message": "Answers stored successfully"}), 200
+    
+
 if __name__== '__main__':
     from os import environ
     port = int(environ.get("PORT", 5000))
