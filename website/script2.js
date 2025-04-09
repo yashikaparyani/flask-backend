@@ -8,16 +8,13 @@ document.addEventListener("DOMContentLoaded", function () {
         const email = document.getElementById("login-email").value.trim();
         const phone = document.getElementById("login-number").value.trim();
 
-        // Simple validation
         if (!name || !email || !phone) {
-            alert("Please fill in all fields.");
+            alert("Please fill in all required fields.");
             return;
         }
 
-        // Save name for quiz.js usage
         localStorage.setItem("username", name);
 
-        // Send data to Flask backend
         fetch("https://flask-backend-9bjs.onrender.com/login", {
             method: "POST",
             headers: {
