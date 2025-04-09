@@ -4,7 +4,7 @@ import sqlite3
 import os
 
 app = Flask(__name__)
-CORS(app, origins=["https://extraordinary-dragon-1a19a7.netlify.app"])
+CORS(app, origins=["https://qconnecttt.netlify.app"])
 
 DB_PATH = os.path.join(os.path.dirname(__file__), 'leaderboard.db')
 
