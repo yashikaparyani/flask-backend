@@ -41,8 +41,9 @@ def submit_score():
     data = request.get_json()
     name = data.get('name')
     score = data.get('score')
+    phone = data.get('phone')
 
-    if name is None or score is None:
+    if name is None or score is None or phone is None:
         return jsonify({"error": "Missing name or score"}), 400
 
     conn = sqlite3.connect(DB_PATH)
