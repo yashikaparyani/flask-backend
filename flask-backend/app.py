@@ -89,7 +89,10 @@ def get_users():
     cursor.execute("SELECT * FROM users")
     users = cursor.fetchall()
     conn.close()
-    return jsonify(users)
+    return jsonify([
+        {"id": row[0],"name":row[1],"email":row[2],"phone":row[3]}
+        for row in users
+    ])
 
 if __name__== '__main__':
     from os import environ
