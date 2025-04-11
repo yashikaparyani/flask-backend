@@ -175,6 +175,16 @@ def get_percentages(question_id):
     percentages.get(2, 0),
     percentages.get(3, 0)])
 
+@app.route('/view-stats')
+def view_stats():
+    DB_PATH = os.path.join(os.path.dirname(__file__), 'leaderboard.db')
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    cursor.execute('SELECT * FROM question_stats')
+    data = cursor.fetchall()
+    conn.close()
+    return jsonify(data)
+
 
 
 if __name__== '__main__':
