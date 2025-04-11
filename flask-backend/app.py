@@ -142,6 +142,34 @@ def submit_answers():
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+    
+
+@app.route('/question-stats', methods=['GET'])
+def question_stats():
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+
+    cursor.execute("SELECT question_id, selected_option, COUNT(*) FROM answers GROUP BY question_id, selected_option")
+    results = cursor.fetchall()
+    conn.close()
+
+    stats = {}
+    for qid, option, count in results:
+        if qid not in stats:
+            stats[qid] = {}
+        stats[qid][option] = count
+
+    percentages = {}
+    for qid in stats:
+        total = sum(stats[qid].values())
+        percentages[qid] = {
+            opt: round((count / total) * 100, 2)
+            for opt, count in stats[qid].items()
+        }
+
+    return jsonify(percentages)
+
+
 
 if __name__== '__main__':
     from os import environ
