@@ -144,34 +144,28 @@ def submit_answers():
         return jsonify({"error": str(e)}), 500
     
 
-@app.route('/question-stats', methods=['GET'])
-def question_stats():
+@app.route("/question-stats", methods=["GET"])
+def get_question_stats():
     try:
-        conn = sqlite3.connect(DB_PATH)
+        conn = get_db_connection()
         cursor = conn.cursor()
-
-        cursor.execute("SELECT question_id, selected_option, COUNT(*) FROM answers GROUP BY question_id, selected_option")
-        results = cursor.fetchall()
-        print("Query Results:", results)
+        cursor.execute("SELECT question_index, option_index, COUNT(*) as count FROM question_stats GROUP BY question_index, option_index")
+        rows = cursor.fetchall()
+        conn.close()
 
         stats = {}
-        for qid, option, count in results:
-            if qid not in stats:
-                stats[qid] = {}
-            stats[qid][option] = count
+        for row in rows:
+            q_index = row["question_index"]
+            o_index = row["option_index"]
+            count = row["count"]
+            if q_index not in stats:
+                stats[q_index] = {}
+            stats[q_index][o_index] = count
 
-        percentages = {}
-        for qid in stats:
-            total = sum(stats[qid].values())
-            percentages[qid] = {
-                opt: round((count / total) * 100, 2)
-                for opt, count in stats[qid].items()
-            }
+        return jsonify(stats)
 
-        return jsonify(percentages)
-    
     except Exception as e:
-        print("Error in /question-stats:", e)
+        print("ERROR in /question-stats:", str(e))  # Show this in Render logs
         return jsonify({"error": str(e)}), 500
 
 
