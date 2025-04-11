@@ -8,6 +8,10 @@ CORS(app, resources={r"/*": {"origins": "https://qconnecttt.netlify.app"}}, supp
 
 DB_PATH = os.path.join(os.path.dirname(__file__), "leaderboard.db")
 
+@app.before_request
+def handle_options_requests():
+    if request.method == 'OPTIONS':
+        return '', 200
 
 @app.route("/")
 def home():
