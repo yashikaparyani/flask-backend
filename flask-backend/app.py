@@ -158,7 +158,13 @@ def submit_option():
     conn.close()
 
     print("Step 3 - Submission Complete")
-    return jsonify({'status': 'success'})
+    return jsonify({
+    'status': 'success',
+    'step': 'submitted',
+    'question_id': question_id,
+    'option_index': option_index,
+    'existing_row': bool(row)
+    })
 
 @app.route('/get-percentages/<int:question_id>', methods=['GET'])
 def get_percentages(question_id):
