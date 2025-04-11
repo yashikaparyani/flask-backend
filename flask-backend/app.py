@@ -127,29 +127,38 @@ def submit_option():
     question_id = data.get('question_id')
     option_index = data.get('option_index')
 
-    print("Received:", question_id, option_index)
-
-    if question_id is None or option_index is None:
-        return jsonify({"error": "Missing data"}), 400
+    print("Step 1 - Option Submission Received")
+    print(f"Question ID: {question_id}, Option Index: {option_index}")
 
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
 
     # Check if entry already exists
-    cursor.execute('SELECT count FROM question_stats WHERE question_id = ? AND option_index = ?', (question_id, option_index))
+    cursor.execute('''
+        SELECT count FROM question_stats
+        WHERE question_id = ? AND option_index = ?
+    ''', (question_id, option_index))
     row = cursor.fetchone()
 
     if row:
-        new_count = row[0] + 1
-        cursor.execute('UPDATE question_stats SET count = ? WHERE question_id = ? AND option_index = ?', (new_count, question_id, option_index))
-        print(f"Updated count to {new_count}")
+        print("Step 2 - Entry Found. Updating Count.")
+        cursor.execute('''
+            UPDATE question_stats
+            SET count = count + 1
+            WHERE question_id = ? AND option_index = ?
+        ''', (question_id, option_index))
     else:
-        cursor.execute('INSERT INTO question_stats (question_id, option_index, count) VALUES (?, ?, ?)', (question_id, option_index, 1))
-        print("Inserted new row")
+        print("Step 2 - No Entry Found. Inserting New.")
+        cursor.execute('''
+            INSERT INTO question_stats (question_id, option_index, count)
+            VALUES (?, ?, 1)
+        ''', (question_id, option_index))
 
     conn.commit()
     conn.close()
-    return jsonify({"success": True})
+
+    print("Step 3 - Submission Complete")
+    return jsonify({'status': 'success'})
 
 @app.route('/get-percentages/<int:question_id>', methods=['GET'])
 def get_percentages(question_id):
