@@ -180,10 +180,10 @@ def get_percentages(question_id):
         for option_index, count in rows
     }
 
-    return jsonify([percentages.get(0, 0),
-    percentages.get(1, 0),
-    percentages.get(2, 0),
-    percentages.get(3, 0)])
+    return jsonify([percentages.get("0", 0),
+    percentages.get("1", 0),
+    percentages.get("2", 0),
+    percentages.get("3", 0)])
 
 @app.route('/view-stats')
 def view_stats():
