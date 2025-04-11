@@ -72,7 +72,7 @@ function showQuestion() {
                 .then(percentages => {
                     const buttons = optionsElement.querySelectorAll('button');
                     percentages.forEach((percent, idx) => {
-                        buttons[idx].innerText =` ${questions[currentQuestionIndex].options[idx]} (${percent}%)`;
+                        buttons[idx].innerText =`${questions[currentQuestionIndex].options[idx]} (${percent}%)`;
                     });
                 });
         });
