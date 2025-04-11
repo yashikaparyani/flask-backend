@@ -3,14 +3,15 @@ from flask_cors import CORS
 import sqlite3
 import os
 
+DB_PATH = os.path.join(os.path.dirname(__file__), 'leaderboard.db')
+conn = sqlite3.connect(DB_PATH)
+cursor = conn.cursor()
+
 app = Flask(__name__)
 CORS(app, origins=["https://qconnecttt.netlify.app"])
 
-DB_PATH = os.path.join(os.path.dirname(__file__), 'leaderboard.db')
-
 def init_db():
-    conn = sqlite3.connect(DB_PATH)
-    cursor = conn.cursor()
+    
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS leaderboard (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -24,6 +25,14 @@ def init_db():
             name TEXT NOT NULL,
             email TEXT NOT NULL,
             phone TEXT NOT NULL
+        )
+    ''')
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS question_stats (
+            question_id INTEGER,
+            option_index INTEGER,
+            count INTEGER DEFAULT 0,
+            PRIMARY KEY (question_id, option_index)
         )
     ''')
 
@@ -104,6 +113,46 @@ def all_leaderboard():
 
     full_data = [{"id": row[0], "name": row[1], "score": row[2]} for row in results]
     return jsonify(full_data), 200
+
+@app.route('/submit-option', methods=['POST'])
+def submit_option():
+    data = request.json
+    question_id = data.get('question_id')
+    option_index = data.get('option_index')
+
+    if question_id is None or option_index is None:
+        return jsonify({'error': 'Invalid data'}), 400
+
+    # Update or insert count for selected option
+    cursor.execute('''
+        INSERT INTO question_stats (question_id, option_index, count)
+        VALUES (?, ?, 1)
+        ON CONFLICT(question_id, option_index)
+        DO UPDATE SET count = count + 1
+    ''', (question_id, option_index))
+    conn.commit()
+
+    return jsonify({'status': 'success'})
+
+@app.route('/get-percentages/<int:question_id>', methods=['GET'])
+def get_percentages(question_id):
+    cursor.execute('''
+        SELECT option_index, count FROM question_stats WHERE question_id = ?
+    ''', (question_id,))
+    rows = cursor.fetchall()
+
+    total = sum(count for _, count in rows)
+    if total == 0:
+        return jsonify({})  # No data yet
+
+    percentages = {
+        str(option_index): round((count / total) * 100, 2)
+        for option_index, count in rows
+    }
+
+    return jsonify(percentages)
+
+
 
 if __name__== '__main__':
     from os import environ
