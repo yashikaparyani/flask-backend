@@ -97,7 +97,7 @@ let questions = [
   optionsElement.innerHTML = "";
   nextButton.classList.add("hide");
   scoreElement.classList.remove("hide");
-  scoreElement.innerText = `Final Score: ${score} / ${questions.length}`;
+  scoreElement.innerText =`Final Score: ${score} / ${questions.length}`;
   submitAnswersToBackend(userAnswers);
   
   // Auto submit the score  
