@@ -54,6 +54,29 @@ function showQuestion() {
       button.innerText = option;
       button.classList.add("btn");
       button.addEventListener("click", () => selectAnswer(index));
+      button.addEventListener("click", () => {
+        fetch('https://flask-backend-9bjs.onrender.com/submit-option', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                question_id: currentQuestionIndex,
+                option_index: index
+            })
+        })
+        .then(() => {
+            // Get updated percentages
+            fetch(`https://flask-backend-9bjs.onrender.com/get-percentages/${currentQuestionIndex}`)
+                .then(res => res.json())
+                .then(percentages => {
+                    const buttons = optionsElement.querySelectorAll('button');
+                    percentages.forEach((percent, idx) => {
+                        buttons[idx].innerText =` ${questions[currentQuestionIndex].options[idx]} (${percent}%)`;
+                    });
+                });
+        });
+    });
       optionsElement.appendChild(button);
   });
 
