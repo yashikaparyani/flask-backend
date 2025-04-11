@@ -69,12 +69,13 @@ function showQuestion() {
             // Get updated percentages
             fetch(`https://flask-backend-9bjs.onrender.com/get-percentages/${currentQuestionIndex}`)
                 .then(res => res.json())
-                .then(percentages => {
-                    const buttons = optionsElement.querySelectorAll('button');
-                    percentages.forEach((percent, idx) => {
-                        buttons[idx].innerText =`${questions[currentQuestionIndex].options[idx]} (${percent}%)`;
-                    });
-                });
+                .then(data => {
+                  const buttons = optionsElement.querySelectorAll('button');
+                  data.forEach((percent, idx) => {
+                      const originalText = buttons[idx].innerText.split(" (")[0];
+                      buttons[idx].innerText = `${originalText} (${percent}%)`;
+                  });
+              });
         });
     });
       optionsElement.appendChild(button);
