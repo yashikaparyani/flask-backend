@@ -1,149 +1,201 @@
 let questions = [
-    {
-        question: "What will console.log(2 + '2') output in JavaScript?",
-        options: ["4", "22", "NaN", "Error"],
-        answer: 1
-    },
-    {
-        question: "Which keyword is used to declare a constant variable in JavaScript?",
-        options: ["let", "var", "const", "static"],
-        answer: 2
-    },
-    {
-        question: "What does the typeof operator return for null?",
-        options: ["null", "object", "undefined", "number"],
-        answer: 1
-    },
-    {
-        question: "How can you access the last element of an array in JavaScript?",
-        options: ["array{last]", "array[-1]", "array[array.length-1]", "array.pop()"],
-        answer: 2
-    },
-    {
-        question: "What is the purpose of setTimeout function in JavaScript?",
-        options: ["To execute a function immediately", "To execute a function after a delay", "To stop a loop", "To store a variable's value"],
-        answer: 1
-    }
+  {
+      question: "What will console.log(2 + '2') output in JavaScript?",
+      options: ["4", "22", "NaN", "Error"],
+      answer: 1
+  },
+  {
+      question: "Which keyword is used to declare a constant variable in JavaScript?",
+      options: ["let", "var", "const", "static"],
+      answer: 2
+  },
+  {
+      question: "What does the typeof operator return for null?",
+      options: ["null", "object", "undefined", "number"],
+      answer: 1
+  },
+  {
+      question: "How can you access the last element of an array in JavaScript?",
+      options: ["array{last]", "array[-1]", "array[array.length-1]", "array.pop()"],
+      answer: 2
+  },
+  {
+      question: "What is the purpose of setTimeout function in JavaScript?",
+      options: ["To execute a function immediately", "To execute a function after a delay", "To stop a loop", "To store a variable's value"],
+      answer: 1
+  }
 ];
-  
-  let currentQuestion = 0;
-  let score = 0;
-  let timer;
-  let userAnswers = [];
-  
-  function startTimer() {
-    let timeLeft = 15;
-    document.getElementById("timer").textContent = timeLeft;
-    timer = setInterval(() => {
-      timeLeft--;
-      document.getElementById("timer").textContent = timeLeft;
-      if (timeLeft <= 0) {
-        clearInterval(timer);
-        submitAnswer(-1); // auto-skip
-      }
-    }, 1000);
+
+let currentQuestionIndex = 0;
+let score = 0;
+let timerInterval;
+
+const questionElement = document.getElementById("question");
+const optionsElement = document.getElementById("options");
+const nextButton = document.getElementById("next-btn");
+const scoreElement = document.getElementById("score");
+const quizContainer = document.querySelector(".quiz-container");
+
+const BACKEND_URL = "https://flask-backend-9bjs.onrender.com";
+
+function startQuiz() {
+  currentQuestionIndex = 0;
+  score = 0;
+  showQuestion();
+}
+
+function showQuestion() {
+  const questionData = questions[currentQuestionIndex];
+  questionElement.innerText = questionData.question;
+  optionsElement.innerHTML = "";
+
+  questionData.options.forEach((option, index) => {
+      const button = document.createElement("button");
+      button.innerText = option;
+      button.classList.add("btn");
+      button.addEventListener("click", () => selectAnswer(index));
+      optionsElement.appendChild(button);
+  });
+
+  nextButton.classList.add("hide");
+  scoreElement.innerText = `Score: ${score}`;
+  startTimer();
+}
+
+function selectAnswer(index) {
+  clearInterval(timerInterval);
+  const correctIndex = questions[currentQuestionIndex].answer;
+  if (index === correctIndex) {
+      score++;
+      optionsElement.children[index].classList.add("correct");
+  } else {
+      optionsElement.children[index].classList.add("wrong");
+      optionsElement.children[correctIndex].classList.add("correct");
   }
-  
-  function showQuestion() {
-    const q = questions[currentQuestion];
-    document.getElementById("question").textContent = q.question;
-    const optionsDiv = document.getElementById("options");
-    optionsDiv.innerHTML = "";
-    q.options.forEach((option, index) => {
-      const btn = document.createElement("button");
-      btn.textContent = option;
-      btn.className = "option-button";
-      btn.onclick = () => submitAnswer(index);
-      optionsDiv.appendChild(btn);
-    });
-    startTimer();
-  }
-  
-  function submitAnswer(selectedOption) {
-    clearInterval(timer);
-  
-    const correct = questions[currentQuestion].correctAnswer;
-    if (selectedOption === correct) score++;
-  
-    userAnswers.push({
-      question_id: currentQuestion,
-      selected_option: selectedOption
-    });
-  
-    currentQuestion++;
-    if (currentQuestion < questions.length) {
+  disableOptions();
+  fetchAndDisplayStats(currentQuestionIndex);
+  nextButton.classList.remove("hide");
+}
+
+function disableOptions() {
+  Array.from(optionsElement.children).forEach(button => {
+      button.disabled = true;
+  });
+}
+
+nextButton.addEventListener("click", () => {
+  currentQuestionIndex++;
+  if (currentQuestionIndex < questions.length) {
       showQuestion();
-    } else {
-      finishQuiz();
-    }
+  } else {
+      endQuiz();
   }
-  
-  function finishQuiz() {
-    document.getElementById("quiz-container").innerHTML = `
-      <h2>Quiz Completed!</h2>
-      <p>Your Score: ${score}/${questions.length}</p>
-      <button onclick="submitScore()">Submit Score</button>
-      <button onclick="window.location.href='leaderboard.html'">View Leaderboard</button>
-      <div id="stats-container"></div>
-    `;
-    sendAnswersToBackend();
+});
+
+function endQuiz() {
+  questionElement.innerText = "Quiz Completed!";
+  optionsElement.innerHTML = "";
+  nextButton.classList.add("hide");
+  scoreElement.classList.remove("hide");
+  scoreElement.innerText = `Final Score: ${score} / ${questions.length}`;
+  submitAnswersToBackend(userAnswers);
+  saveToBackend();
+
+  const leaderboardBtn = document.createElement("button");
+  leaderboardBtn.innerText = "View Leaderboard";
+  leaderboardBtn.classList.add("btn");
+  leaderboardBtn.addEventListener("click", () => {
+      window.location.href = "leaderboard.html";
+  });
+  quizContainer.appendChild(leaderboardBtn);
+
+  const timerElement = document.getElementById("timer");
+  if (timerElement) {
+      timerElement.style.display = "none";
   }
-  
-  function submitScore() {
-    const name = localStorage.getItem("name") || "Anonymous";
-    fetch("https://flask-backend-9bjs.onrender.com/submit-score", {
+}
+
+function saveToBackend() {
+  const username = localStorage.getItem("username") || "Guest";
+  console.log("Submitting score to backend:", username, score);
+
+  fetch(`${BACKEND_URL}/leaderboard`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, score })
-    })
+      headers: {
+          "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+          name: username,
+          score: score
+      })
+  })
+  .then(res => res.json())
+  .then(data => {
+      console.log("Score saved:", data);
+  })
+  .catch(err => {
+      console.error("Failed to save score:", err);
+  });
+}
+
+function submitAnswersToBackend(selectedAnswers) {
+  fetch(`${BACKEND_URL}/submit-answers`, {
+      method: "POST",
+      headers: {
+          "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ answers: selectedAnswers }),
+  })
+  .then(response => response.json())
+  .then(data => {
+      console.log("Answer submission response:", data);
+  })
+  .catch(error => {
+      console.error("Error submitting answers:", error);
+  });
+}
+
+function fetchAndDisplayStats(questionIndex) {
+  fetch(`${BACKEND_URL}/question-stats`)
       .then(res => res.json())
       .then(data => {
-        alert("Score submitted!");
+          const stats = data[questionIndex];
+          if (!stats) return;
+
+          const totalVotes = Object.values(stats).reduce((sum, val) => sum + val, 0);
+          if (totalVotes === 0) return;
+
+          Array.from(optionsElement.children).forEach((btn, idx) => {
+              const percent = stats[idx] || 0;
+              const percentSpan = document.createElement("span");
+              percentSpan.innerText = ` - ${percent}%`;
+              percentSpan.style.marginLeft = "10px";
+              percentSpan.style.color = "blue";
+              btn.appendChild(percentSpan);
+          });
       })
       .catch(err => {
-        alert("Error submitting score.");
-        console.error(err);
+          console.error("Failed to fetch stats:", err);
       });
-  }
-  
-  function sendAnswersToBackend() {
-    fetch("https://flask-backend-9bjs.onrender.com/submit-answers", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ answers: userAnswers })
-    })
-      .then(res => res.json())
-      .then(() => {
-        getQuestionStats();
-      })
-      .catch(err => console.error("Error saving answers:", err));
-  }
-  
-  function getQuestionStats() {
-    fetch("https://flask-backend-9bjs.onrender.com/question-stats")
-      .then(res => res.json())
-      .then(stats => {
-        const container = document.getElementById("stats-container");
-        container.innerHTML = "<h3>Question Stats:</h3>";
-  
-        questions.forEach((q, i) => {
-          const qStats = stats[i] || {};
-          const total = Object.values(qStats).reduce((a, b) => a + b, 0) || 1;
-  
-          const statDiv = document.createElement("div");
-          statDiv.innerHTML = <strong>${q.question}</strong>;
-          q.options.forEach((opt, idx) => {
-            const count = qStats[idx] || 0;
-            const percent = ((count / total) * 100).toFixed(1);
-            const line = document.createElement("p");
-            line.textContent = `${opt}: ${percent}% (${count})`;
-            statDiv.appendChild(line);
-          });
-          container.appendChild(statDiv);
-          container.appendChild(document.createElement("hr"));
-        });
-      })
-      .catch(err => console.error("Error fetching stats:", err));
-  }
-  
-  document.addEventListener("DOMContentLoaded", showQuestion);
+}
+
+let timeleft = 10;
+function startTimer() {
+  clearInterval(timerInterval);
+  timeleft = 10;
+  document.getElementById("time-left").innerText = timeleft;
+  timerInterval = setInterval(() => {
+      timeleft--;
+      document.getElementById("time-left").innerText = timeleft;
+      if (timeleft === 0) {
+          clearInterval(timerInterval);
+          nextButton.click();
+      }
+  }, 1000);
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  const username = localStorage.getItem("username") || prompt("Enter your name") || "Guest";
+  localStorage.setItem("username", username);
+  startQuiz();
+});

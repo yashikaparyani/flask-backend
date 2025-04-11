@@ -142,32 +142,6 @@ def submit_answers():
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-    
-
-@app.route("/question-stats", methods=["GET"])
-def get_question_stats():
-    try:
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        cursor.execute("SELECT question_index, option_index, COUNT(*) as count FROM question_stats GROUP BY question_index, option_index")
-        rows = cursor.fetchall()
-        conn.close()
-
-        stats = {}
-        for row in rows:
-            q_index = row["question_index"]
-            o_index = row["option_index"]
-            count = row["count"]
-            if q_index not in stats:
-                stats[q_index] = {}
-            stats[q_index][o_index] = count
-
-        return jsonify(stats)
-
-    except Exception as e:
-        print("ERROR in /question-stats:", str(e))  # Show this in Render logs
-        return jsonify({"error": str(e)}), 500
-
 
 if __name__== '__main__':
     from os import environ
