@@ -27,12 +27,14 @@ def init_db():
         )
     ''')
     cursor.execute('''
-    CREATE TABLE IF NOT EXISTS question_stats (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        question_id INTEGER NOT NULL,
-        selected_option TEXT NOT NULL
-    )
-''')
+        CREATE TABLE IF NOT EXISTS question_stats (
+            question_id INTEGER,
+            option_selected TEXT,
+            count INTEGER DEFAULT 0,
+            PRIMARY KEY (question_id, option_selected)
+        )
+    ''')
+
     conn.commit()
     conn.close()
 
