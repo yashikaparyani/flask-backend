@@ -26,14 +26,6 @@ def init_db():
             phone TEXT NOT NULL
         )
     ''')
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS question_stats (
-            question_id INTEGER,
-            option_selected TEXT,
-            count INTEGER DEFAULT 0,
-            PRIMARY KEY (question_id, option_selected)
-        )
-    ''')
 
     conn.commit()
     conn.close()
@@ -112,36 +104,6 @@ def all_leaderboard():
 
     full_data = [{"id": row[0], "name": row[1], "score": row[2]} for row in results]
     return jsonify(full_data), 200
-
-@app.route('/submit-answers', methods=['POST'])
-def submit_answers():
-    data = request.get_json()
-    answers = data.get('answers')
-
-    if not answers:
-        return jsonify({"error": "Answers data missing"}), 400
-
-    try:
-        conn = sqlite3.connect(DB_PATH)
-        cursor = conn.cursor()
-
-        for answer in answers:
-            question_id = answer.get("question_id")
-            selected_option = answer.get("selected_option")
-
-            if question_id is not None and selected_option:
-                cursor.execute(
-                    "INSERT INTO question_stats (question_id, selected_option) VALUES (?, ?)",
-                    (question_id, selected_option)
-                )
-
-        conn.commit()
-        conn.close()
-
-        return jsonify({"message": "Answers saved successfully"}), 200
-
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
 
 if __name__== '__main__':
     from os import environ
