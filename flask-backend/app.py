@@ -3,14 +3,15 @@ from flask_cors import CORS
 import sqlite3
 import os
 
-DB_PATH = os.path.join(os.path.dirname(__file__), 'leaderboard.db')
-conn = sqlite3.connect(DB_PATH)
-cursor = conn.cursor()
+
 
 app = Flask(__name__)
 CORS(app, origins=["https://qconnecttt.netlify.app"])
 
 def init_db():
+    DB_PATH = os.path.join(os.path.dirname(__file__), 'leaderboard.db')
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
     
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS leaderboard (
@@ -47,6 +48,7 @@ def home():
 
 @app.route('/leaderboard', methods=['POST'])
 def submit_score():
+    DB_PATH = os.path.join(os.path.dirname(__file__), 'leaderboard.db')
     data = request.get_json()
     name = data.get('name')
     score = data.get('score')
@@ -64,6 +66,7 @@ def submit_score():
 
 @app.route('/leaderboard', methods=['GET'])
 def get_leaderboard():
+    DB_PATH = os.path.join(os.path.dirname(__file__), 'leaderboard.db')
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
     cursor.execute("SELECT name, score FROM leaderboard ORDER BY score DESC LIMIT 10")
@@ -83,6 +86,7 @@ def login():
     if not name or not email or not phone:
         return jsonify({"error": "Missing fields"}), 400
 
+    DB_PATH = os.path.join(os.path.dirname(__file__), 'leaderboard.db')
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
     cursor.execute("INSERT INTO users (name, email, phone) VALUES (?, ?, ?)", (name, email, phone))
@@ -94,6 +98,7 @@ def login():
 
 @app.route('/get-users', methods=['GET'])
 def get_users():
+    DB_PATH = os.path.join(os.path.dirname(__file__), 'leaderboard.db')
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
     cursor.execute("SELECT * FROM users")
@@ -105,6 +110,7 @@ def get_users():
     ])
 @app.route('/all-leaderboard', methods=['GET'])
 def all_leaderboard():
+    DB_PATH = os.path.join(os.path.dirname(__file__), 'leaderboard.db')
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
     cursor.execute("SELECT * FROM leaderboard")
@@ -116,6 +122,9 @@ def all_leaderboard():
 
 @app.route('/submit-option', methods=['POST'])
 def submit_option():
+    DB_PATH = os.path.join(os.path.dirname(__file__), 'leaderboard.db')
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
     data = request.json
     question_id = data.get('question_id')
     option_index = data.get('option_index')
@@ -136,6 +145,9 @@ def submit_option():
 
 @app.route('/get-percentages/<int:question_id>', methods=['GET'])
 def get_percentages(question_id):
+    DB_PATH = os.path.join(os.path.dirname(__file__), 'leaderboard.db')
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
     cursor.execute('''
         SELECT option_index, count FROM question_stats WHERE question_id = ?
     ''', (question_id,))
