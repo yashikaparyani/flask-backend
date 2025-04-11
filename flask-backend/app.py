@@ -4,114 +4,66 @@ import sqlite3
 import os
 
 app = Flask(__name__)
-CORS(app, origins=["https://qconnecttt.netlify.app"])
+CORS(app)
 
-DB_PATH = os.path.join(os.path.dirname(__file__), 'leaderboard.db')
+DB_PATH = os.path.join(os.path.dirname(__file__), "leaderboard.db")
 
-def init_db():
-    conn = sqlite3.connect(DB_PATH)
-    cursor = conn.cursor()
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS leaderboard (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            name TEXT NOT NULL,
-            score INTEGER NOT NULL
-        )
-    ''')
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS users (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            name TEXT NOT NULL,
-            email TEXT NOT NULL,
-            phone TEXT NOT NULL
-        )
-    ''')
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS question_stats (
-            question_id INTEGER,
-            option_selected TEXT,
-            count INTEGER DEFAULT 0,
-            PRIMARY KEY (question_id, option_selected)
-        )
-    ''')
-
-    conn.commit()
-    conn.close()
-
-init_db()
-
-@app.route('/')
+@app.route("/")
 def home():
-    return "Quiz Leaderboard API is Running!"
+    return "Flask backend for Qnect is running."
 
-@app.route('/leaderboard', methods=['POST'])
+@app.route("/submit-score", methods=["POST"])
 def submit_score():
     data = request.get_json()
-    name = data.get('name')
-    score = data.get('score')
+    name = data.get("name")
+    score = data.get("score")
 
-    if name is None or score is None:
+    if not name or score is None:
         return jsonify({"error": "Missing name or score"}), 400
 
-    conn = sqlite3.connect(DB_PATH)
-    cursor = conn.cursor()
-    cursor.execute("INSERT INTO leaderboard (name, score) VALUES (?, ?)", (name, score))
-    conn.commit()
-    conn.close()
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+        cursor.execute("INSERT INTO leaderboard (name, score) VALUES (?, ?)", (name, score))
+        conn.commit()
+        conn.close()
+        return jsonify({"message": "Score submitted successfully"}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
-    return jsonify({"message": "Score saved successfully"}), 200
-
-@app.route('/leaderboard', methods=['GET'])
+@app.route("/get-leaderboard", methods=["GET"])
 def get_leaderboard():
-    conn = sqlite3.connect(DB_PATH)
-    cursor = conn.cursor()
-    cursor.execute("SELECT name, score FROM leaderboard ORDER BY score DESC LIMIT 10")
-    results = cursor.fetchall()
-    conn.close()
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+        cursor.execute("SELECT name, score FROM leaderboard ORDER BY score DESC LIMIT 10")
+        rows = cursor.fetchall()
+        conn.close()
 
-    leaderboard = [{"name": name, "score": score} for name, score in results]
-    return jsonify(leaderboard)
+        leaderboard = [{"name": row[0], "score": row[1]} for row in rows]
+        return jsonify(leaderboard)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
-@app.route('/login', methods=['POST'])
-def login():
+@app.route("/submit-user", methods=["POST"])
+def submit_user():
     data = request.get_json()
-    name = data.get('name')
-    email = data.get('email')
-    phone = data.get('phone')
+    name = data.get("name")
+    email = data.get("email")
+    phone = data.get("phone")
 
     if not name or not email or not phone:
-        return jsonify({"error": "Missing fields"}), 400
+        return jsonify({"error": "Missing required fields"}), 400
 
-    conn = sqlite3.connect(DB_PATH)
-    cursor = conn.cursor()
-    cursor.execute("INSERT INTO users (name, email, phone) VALUES (?, ?, ?)", (name, email, phone))
-    print(f"saved user: {name},{email},{phone}")
-    conn.commit()
-    conn.close()
-
-    return jsonify({"message": "Login successful"}), 200
-
-@app.route('/get-users', methods=['GET'])
-def get_users():
-    conn = sqlite3.connect(DB_PATH)
-    cursor = conn.cursor()
-    cursor.execute("SELECT * FROM users")
-    users = cursor.fetchall()
-    conn.close()
-    return jsonify([
-        {"id": row[0],"name":row[1],"email":row[2],"phone":row[3]}
-        for row in users
-    ])
-@app.route('/all-leaderboard', methods=['GET'])
-def all_leaderboard():
-    conn = sqlite3.connect(DB_PATH)
-    cursor = conn.cursor()
-    cursor.execute("SELECT * FROM leaderboard")
-    results = cursor.fetchall()
-    conn.close()
-
-    full_data = [{"id": row[0], "name": row[1], "score": row[2]} for row in results]
-    return jsonify(full_data), 200
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+        cursor.execute("INSERT INTO users (name, email, phone) VALUES (?, ?, ?)", (name, email, phone))
+        conn.commit()
+        conn.close()
+        return jsonify({"message": "User data submitted successfully"}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 @app.route('/submit-answers', methods=['POST'])
 def submit_answers():
@@ -127,37 +79,37 @@ def submit_answers():
 
         for answer in answers:
             question_id = answer.get("question_id")
-            selected_option = answer.get("selected_option")
+            selected_option = str(answer.get("selected_option"))
 
             if question_id is not None and selected_option:
-                cursor.execute(
-                    "INSERT INTO question_stats (question_id, selected_option) VALUES (?, ?)",
-                    (question_id, selected_option)
-                )
+                cursor.execute("""
+                    INSERT INTO question_stats (question_id, option_selected, count)
+                    VALUES (?, ?, 1)
+                    ON CONFLICT(question_id, option_selected)
+                    DO UPDATE SET count = count + 1
+                """, (question_id, selected_option))
 
         conn.commit()
         conn.close()
-
         return jsonify({"message": "Answers saved successfully"}), 200
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-    
 
 @app.route("/question-stats", methods=["GET"])
 def get_question_stats():
     try:
-        conn = get_db_connection()
+        conn = sqlite3.connect(DB_PATH)
         cursor = conn.cursor()
-        cursor.execute("SELECT question_index, option_index, COUNT(*) as count FROM question_stats GROUP BY question_index, option_index")
+        cursor.execute("SELECT question_id, option_selected, count FROM question_stats")
         rows = cursor.fetchall()
         conn.close()
 
         stats = {}
         for row in rows:
-            q_index = row["question_index"]
-            o_index = row["option_index"]
-            count = row["count"]
+            q_index = row[0]
+            o_index = int(row[1])
+            count = row[2]
             if q_index not in stats:
                 stats[q_index] = {}
             stats[q_index][o_index] = count
@@ -165,11 +117,9 @@ def get_question_stats():
         return jsonify(stats)
 
     except Exception as e:
-        print("ERROR in /question-stats:", str(e))  # Show this in Render logs
+        print("ERROR in /question-stats:", str(e))
         return jsonify({"error": str(e)}), 500
 
-
-if __name__== '__main__':
-    from os import environ
-    port = int(environ.get("PORT", 5000))
-    app.run(host='0.0.0.0', port=port)
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 5000))
+    app.run(debug=True, host="0.0.0.0", port=port)
