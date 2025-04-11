@@ -17,7 +17,7 @@ def handle_options_requests():
 def home():
     return "Flask backend for Qnect is running."
 
-@app.route("/submit-score", methods=["POST"])
+@app.route("/submit-score", methods=["POST" , "OPTIONS"])
 def submit_score():
     data = request.get_json()
     name = data.get("name")
@@ -50,7 +50,7 @@ def get_leaderboard():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-@app.route("/submit-user", methods=["POST"])
+@app.route("/submit-user", methods=["POST" , "OPTIONS"])
 def submit_user():
     data = request.get_json()
     name = data.get("name")
@@ -70,7 +70,7 @@ def submit_user():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-@app.route('/submit-answers', methods=['POST'])
+@app.route('/submit-answers', methods=["POST" , "OPTIONS"])
 def submit_answers():
     data = request.get_json()
     answers = data.get('answers')
