@@ -53,8 +53,8 @@ function showQuestion() {
       const button = document.createElement("button");
       button.innerText = option;
       button.classList.add("btn");
-      button.addEventListener("click", () => selectAnswer(index));
       button.addEventListener("click", () => {
+        selectAnswer(index);
         fetch('https://flask-backend-9bjs.onrender.com/submit-option', {
             method: 'POST',
             headers: {
