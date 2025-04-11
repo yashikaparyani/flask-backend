@@ -127,8 +127,6 @@ def submit_option():
     question_id = data.get('question_id')
     option_index = data.get('option_index')
 
-    print("Step 1 - Option Submission Received")
-    print(f"Question ID: {question_id}, Option Index: {option_index}")
 
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
@@ -141,23 +139,20 @@ def submit_option():
     row = cursor.fetchone()
 
     if row:
-        print("Step 2 - Entry Found. Updating Count.")
         cursor.execute('''
             UPDATE question_stats
             SET count = count + 1
             WHERE question_id = ? AND option_index = ?
         ''', (question_id, option_index))
     else:
-        print("Step 2 - No Entry Found. Inserting New.")
         cursor.execute('''
             INSERT INTO question_stats (question_id, option_index, count)
-            VALUES (?, ?, 1)
-        ''', (question_id, option_index))
+            VALUES (?, ?, ?)
+        ''', (question_id, option_index, 1))
 
     conn.commit()
     conn.close()
 
-    print("Step 3 - Submission Complete")
     return jsonify({
     'status': 'success',
     'step': 'submitted',
