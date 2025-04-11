@@ -42,9 +42,9 @@ def init_db():
 
 init_db()
 
-@app.route('/')
+@app.route('/', methods=['GET','HEAD'])
 def home():
-    return "Quiz Leaderboard API is Running!"
+    return " ",200
 
 @app.route('/leaderboard', methods=['POST'])
 def submit_score():
