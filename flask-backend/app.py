@@ -8,6 +8,7 @@ CORS(app, resources={r"/*": {"origins": "https://qconnecttt.netlify.app"}}, supp
 
 DB_PATH = os.path.join(os.path.dirname(__file__), "leaderboard.db")
 
+
 @app.route("/")
 def home():
     return "Flask backend for Qnect is running."
