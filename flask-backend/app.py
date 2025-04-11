@@ -146,29 +146,33 @@ def submit_answers():
 
 @app.route('/question-stats', methods=['GET'])
 def question_stats():
-    conn = sqlite3.connect(DB_PATH)
-    cursor = conn.cursor()
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
 
-    cursor.execute("SELECT question_id, selected_option, COUNT(*) FROM answers GROUP BY question_id, selected_option")
-    results = cursor.fetchall()
-    conn.close()
+        cursor.execute("SELECT question_id, selected_option, COUNT(*) FROM answers GROUP BY question_id, selected_option")
+        results = cursor.fetchall()
+        print("Query Results:", results)
 
-    stats = {}
-    for qid, option, count in results:
-        if qid not in stats:
-            stats[qid] = {}
-        stats[qid][option] = count
+        stats = {}
+        for qid, option, count in results:
+            if qid not in stats:
+                stats[qid] = {}
+            stats[qid][option] = count
 
-    percentages = {}
-    for qid in stats:
-        total = sum(stats[qid].values())
-        percentages[qid] = {
-            opt: round((count / total) * 100, 2)
-            for opt, count in stats[qid].items()
-        }
+        percentages = {}
+        for qid in stats:
+            total = sum(stats[qid].values())
+            percentages[qid] = {
+                opt: round((count / total) * 100, 2)
+                for opt, count in stats[qid].items()
+            }
 
-    return jsonify(percentages)
-
+        return jsonify(percentages)
+    
+    except Exception as e:
+        print("Error in /question-stats:", e)
+        return jsonify({"error": str(e)}), 500
 
 
 if __name__== '__main__':
