@@ -139,6 +139,7 @@ def submit_option():
         ON CONFLICT(question_id, option_index)
         DO UPDATE SET count = count + 1
     ''', (question_id, option_index))
+    print("received submission:", question_id, option_index)
     conn.commit()
 
     return jsonify({'status': 'success'})
