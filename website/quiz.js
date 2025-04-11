@@ -1,20 +1,30 @@
-const questions = [
+let questions = [
     {
-      question: "What does HTML stand for?",
-      options: ["Hyper Text Markup Language", "Home Tool Markup Language", "Hyperlinks and Text Markup Language", "Hyper Tool Multi Language"],
-      correctAnswer: 0
+        question: "What will console.log(2 + '2') output in JavaScript?",
+        options: ["4", "22", "NaN", "Error"],
+        answer: 1
     },
     {
-      question: "What is the capital of France?",
-      options: ["London", "Berlin", "Paris", "Madrid"],
-      correctAnswer: 2
+        question: "Which keyword is used to declare a constant variable in JavaScript?",
+        options: ["let", "var", "const", "static"],
+        answer: 2
     },
     {
-      question: "What is the square root of 64?",
-      options: ["6", "7", "8", "9"],
-      correctAnswer: 2
+        question: "What does the typeof operator return for null?",
+        options: ["null", "object", "undefined", "number"],
+        answer: 1
+    },
+    {
+        question: "How can you access the last element of an array in JavaScript?",
+        options: ["array{last]", "array[-1]", "array[array.length-1]", "array.pop()"],
+        answer: 2
+    },
+    {
+        question: "What is the purpose of setTimeout function in JavaScript?",
+        options: ["To execute a function immediately", "To execute a function after a delay", "To stop a loop", "To store a variable's value"],
+        answer: 1
     }
-  ];
+];
   
   let currentQuestion = 0;
   let score = 0;
