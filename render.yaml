@@ -1,0 +1,6 @@
+services:
+  - type: web
+    name: quiz-leaderboard
+    env: python
+    buildCommand: "pip install -r flask-backend/requirements.txt"
+    startCommand: python app.py
