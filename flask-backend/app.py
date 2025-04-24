@@ -95,7 +95,7 @@ def login():
         cursor.execute("SELECT * FROM users WHERE email =?",(email,))
         user = cursor.fetchone()
         conn.close()
-        if user and check_password_hash(user[2], password):
+        if user and check_password_hash(user[3], password):
             return jsonify({'success': True,"message": "Login successful"}), 200
         else:
             return jsonify({'success': False,"message": "Invalid email or password"}), 400
@@ -124,7 +124,7 @@ def signup():
         conn.close()
 
         return jsonify({"message": "signup successful"}), 200
-    except sqlite3.Integrityerror:
+    except sqlite3.IntegrityError:
         return jsonify({'success': False,'message': 'Email already registered'}),400
     except Exception as e:
         return jsonify({'success': False,'message': str(e)}),500
