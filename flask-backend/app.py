@@ -81,12 +81,10 @@ def get_leaderboard():
 @app.route('/login', methods=['POST'])
 def login():
     data = request.get_json()
-    name = data.get('name')
     email = data.get('email')
     password = data.get('password')
-    phone = data.get('phone')
 
-    if not name or not email or not phone or not password:
+    if not  email  or not password:
         return jsonify({"error": "Missing fields"}), 400
     try:
         DB_PATH = os.path.join(os.path.dirname(__file__), 'leaderboard.db')
