@@ -137,7 +137,7 @@ def get_users():
     users = cursor.fetchall()
     conn.close()
     return jsonify([
-        {"id": row[0],"name":row[1],"email":row[2],"phone":row[3]}
+        {"id": row[0],"name":row[1],"email":row[2],"phone":row[4]}
         for row in users
     ])
 @app.route('/all-leaderboard', methods=['GET'])
