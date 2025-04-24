@@ -123,7 +123,7 @@ def signup():
         conn.commit()
         conn.close()
 
-        return jsonify({"message": "signup successful"}), 200
+        return jsonify({'success':True,"message": "signup successful"}), 200
     except sqlite3.IntegrityError:
         return jsonify({'success': False,'message': 'Email already registered'}),400
     except Exception as e:
