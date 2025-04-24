@@ -1,5 +1,6 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
+from werkzeug.security import generate_password_hash , check_password_hash
 import sqlite3
 import os
 
@@ -25,6 +26,7 @@ def init_db():
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             name TEXT NOT NULL,
             email TEXT NOT NULL,
+            password TEXT NOT NULL,
             phone TEXT NOT NULL
         )
     ''')
@@ -81,20 +83,52 @@ def login():
     data = request.get_json()
     name = data.get('name')
     email = data.get('email')
+    password = data.get('password')
     phone = data.get('phone')
 
-    if not name or not email or not phone:
+    if not name or not email or not phone or not password:
         return jsonify({"error": "Missing fields"}), 400
+    try:
+        DB_PATH = os.path.join(os.path.dirname(__file__), 'leaderboard.db')
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM users WHERE email =?",(email,))
+        user = cursor.fetchone()
+        conn.close()
+        if user and check_password_hash(user[2], password):
+            return jsonify({'success': True,"message": "Login successful"}), 200
+        else:
+            return jsonify({'success': False,"message": "Invalid email or password"}), 400
+    except Exception as e:
+        return jsonify({'success': False,"message": str(e)}), 500
 
-    DB_PATH = os.path.join(os.path.dirname(__file__), 'leaderboard.db')
-    conn = sqlite3.connect(DB_PATH)
-    cursor = conn.cursor()
-    cursor.execute("INSERT INTO users (name, email, phone) VALUES (?, ?, ?)", (name, email, phone))
-    print(f"saved user: {name},{email},{phone}")
-    conn.commit()
-    conn.close()
 
-    return jsonify({"message": "Login successful"}), 200
+@app.route('/signup', methods=['POST'])
+def signup():
+    data = request.get_json()
+    name = data.get('name')
+    email = data.get('email')
+    password = data.get('password')
+    phone = data.get('phone')
+
+    if not name or not email or not phone or not password:
+        return jsonify({"error": "Missing fields"}), 400
+    hashed_password = generate_password_hash(password)
+    try:
+        DB_PATH = os.path.join(os.path.dirname(__file__), 'leaderboard.db')
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+        cursor.execute("INSERT INTO users (name, email, password,phone) VALUES (?, ?, ?, ?)", (name, email, hashed_password, phone))
+        print(f"saved user: {name},{email},{phone}")
+        conn.commit()
+        conn.close()
+
+        return jsonify({"message": "signup successful"}), 200
+    except sqlite3.Integrityerror:
+        return jsonify({'success': False,'message': 'Email already registered'}),400
+    except Exception as e:
+        return jsonify({'success': False,'message': str(e)}),500
+
 
 @app.route('/get-users', methods=['GET'])
 def get_users():
