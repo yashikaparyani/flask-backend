@@ -1,29 +1,34 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from werkzeug.security import generate_password_hash , check_password_hash
-import sqlite3
+import psycopg2
+from psycopg2 import IntegrityError
 import os
-
-
 
 app = Flask(__name__)
 CORS(app, origins=["https://qconnecttt.netlify.app"])
 
+def get_db_connection():
+    DATABASE_URL = os.environ.get('DATABASE_URL')
+    if not DATABASE_URL:
+        raise Exception("DATABASE_URL ENVIRONMENT VARIABLE NOT SET")
+    conn =psycopg2.connect(DATABASE_URL)
+    return conn
+
 def init_db():
-    DB_PATH = os.path.join(os.path.dirname(__file__), 'leaderboard.db')
-    conn = sqlite3.connect(DB_PATH)
+    conn = get_db_connection()
     cursor = conn.cursor()
     
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS leaderboard (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id SERIAL PRIMARY KEY AUTOINCREMENT,
             name TEXT NOT NULL,
             score INTEGER NOT NULL
         )
     ''')
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS users (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id SERIAL PRIMARY KEY AUTOINCREMENT,
             name TEXT NOT NULL,
             email TEXT NOT NULL UNIQUE,
             password TEXT NOT NULL,
@@ -40,17 +45,17 @@ def init_db():
     ''')
 
     conn.commit()
+    cursor.close()
     conn.close()
 
 init_db()
 
 @app.route('/', methods=['GET','HEAD'])
 def home():
-    return " ",200
+    return "FLASK APP CONNECTED "
 
 @app.route('/leaderboard', methods=['POST'])
 def submit_score():
-    DB_PATH = os.path.join(os.path.dirname(__file__), 'leaderboard.db')
     data = request.get_json()
     name = data.get('name')
     score = data.get('score')
@@ -58,9 +63,9 @@ def submit_score():
     if name is None or score is None:
         return jsonify({"error": "Missing name or score"}), 400
 
-    conn = sqlite3.connect(DB_PATH)
+    conn = get_db_connection()
     cursor = conn.cursor()
-    cursor.execute("INSERT INTO leaderboard (name, score) VALUES (?, ?)", (name, score))
+    cursor.execute("INSERT INTO leaderboard (name, score) VALUES (%s, %s)", (name, score))
     conn.commit()
     conn.close()
 
@@ -68,8 +73,7 @@ def submit_score():
 
 @app.route('/leaderboard', methods=['GET'])
 def get_leaderboard():
-    DB_PATH = os.path.join(os.path.dirname(__file__), 'leaderboard.db')
-    conn = sqlite3.connect(DB_PATH)
+    conn = get_db_connection()
     cursor = conn.cursor()
     cursor.execute("SELECT name, score FROM leaderboard ORDER BY score DESC LIMIT 10")
     results = cursor.fetchall()
@@ -87,8 +91,7 @@ def login():
     if not  email  or not password:
         return jsonify({"error": "Missing fields"}), 400
     try:
-        DB_PATH = os.path.join(os.path.dirname(__file__), 'leaderboard.db')
-        conn = sqlite3.connect(DB_PATH)
+        conn = get_db_connection()
         cursor = conn.cursor()
         cursor.execute("SELECT * FROM users WHERE email =?",(email,))
         user = cursor.fetchone()
@@ -113,16 +116,15 @@ def signup():
         return jsonify({"error": "Missing fields"}), 400
     hashed_password = generate_password_hash(password)
     try:
-        DB_PATH = os.path.join(os.path.dirname(__file__), 'leaderboard.db')
-        conn = sqlite3.connect(DB_PATH)
+        conn = get_db_connection()
         cursor = conn.cursor()
-        cursor.execute("INSERT INTO users (name, email, password,phone) VALUES (?, ?, ?, ?)", (name, email, hashed_password, phone))
+        cursor.execute("INSERT INTO users (name, email, password,phone) VALUES (%s, %s, %s, %s)", (name, email, hashed_password, phone))
         print(f"saved user: {name},{email},{phone}")
         conn.commit()
         conn.close()
 
         return jsonify({'success':True,"message": "signup successful"}), 200
-    except sqlite3.IntegrityError:
+    except IntegrityError as e:
         return jsonify({'success': False,'message': 'Email already registered'}),400
     except Exception as e:
         return jsonify({'success': False,'message': str(e)}),500
@@ -130,8 +132,7 @@ def signup():
 
 @app.route('/get-users', methods=['GET'])
 def get_users():
-    DB_PATH = os.path.join(os.path.dirname(__file__), 'leaderboard.db')
-    conn = sqlite3.connect(DB_PATH)
+    conn = get_db_connection()
     cursor = conn.cursor()
     cursor.execute("SELECT * FROM users")
     users = cursor.fetchall()
@@ -142,8 +143,7 @@ def get_users():
     ])
 @app.route('/all-leaderboard', methods=['GET'])
 def all_leaderboard():
-    DB_PATH = os.path.join(os.path.dirname(__file__), 'leaderboard.db')
-    conn = sqlite3.connect(DB_PATH)
+    conn = get_db_connection()
     cursor = conn.cursor()
     cursor.execute("SELECT * FROM leaderboard")
     results = cursor.fetchall()
@@ -154,13 +154,12 @@ def all_leaderboard():
 
 @app.route('/submit-option', methods=['POST'])
 def submit_option():
-    DB_PATH = os.path.join(os.path.dirname(__file__), 'leaderboard.db')
     data = request.get_json()
     question_id = data.get('question_id')
     option_index = data.get('option_index')
 
 
-    conn = sqlite3.connect(DB_PATH)
+    conn = get_db_connection()
     cursor = conn.cursor()
 
     # Check if entry already exists
@@ -195,8 +194,7 @@ def submit_option():
 
 @app.route('/get-percentages/<int:question_id>', methods=['GET'])
 def get_percentages(question_id):
-    DB_PATH = os.path.join(os.path.dirname(__file__), 'leaderboard.db')
-    conn = sqlite3.connect(DB_PATH)
+    conn = get_db_connection()
     cursor = conn.cursor()
     cursor.execute('''
         SELECT option_index, count FROM question_stats WHERE question_id = ?
@@ -219,8 +217,7 @@ def get_percentages(question_id):
 
 @app.route('/view-stats')
 def view_stats():
-    DB_PATH = os.path.join(os.path.dirname(__file__), 'leaderboard.db')
-    conn = sqlite3.connect(DB_PATH)
+    conn = get_db_connection()
     cursor = conn.cursor()
     cursor.execute('SELECT * FROM question_stats')
     data = cursor.fetchall()
