@@ -21,14 +21,14 @@ def init_db():
     
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS leaderboard (
-            id SERIAL PRIMARY KEY AUTOINCREMENT,
+            id SERIAL PRIMARY KEY ,
             name TEXT NOT NULL,
             score INTEGER NOT NULL
         )
     ''')
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS users (
-            id SERIAL PRIMARY KEY AUTOINCREMENT,
+            id SERIAL PRIMARY KEY ,
             name TEXT NOT NULL,
             email TEXT NOT NULL UNIQUE,
             password TEXT NOT NULL,
