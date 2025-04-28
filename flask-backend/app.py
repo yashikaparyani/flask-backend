@@ -93,7 +93,7 @@ def login():
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
-        cursor.execute("SELECT * FROM users WHERE email =?",(email,))
+        cursor.execute("SELECT * FROM users WHERE email =%s",(email,))
         user = cursor.fetchone()
         conn.close()
         if user and check_password_hash(user[3], password):
@@ -165,7 +165,7 @@ def submit_option():
     # Check if entry already exists
     cursor.execute('''
         SELECT count FROM question_stats
-        WHERE question_id = ? AND option_index = ?
+        WHERE question_id = %s AND option_index = %s
     ''', (question_id, option_index))
     row = cursor.fetchone()
 
@@ -173,12 +173,12 @@ def submit_option():
         cursor.execute('''
             UPDATE question_stats
             SET count = count + 1
-            WHERE question_id = ? AND option_index = ?
+            WHERE question_id = %s AND option_index = %s
         ''', (question_id, option_index))
     else:
         cursor.execute('''
             INSERT INTO question_stats (question_id, option_index, count)
-            VALUES (?, ?, ?)
+            VALUES (%s, %s, %s)
         ''', (question_id, option_index, 1))
 
     conn.commit()
@@ -197,7 +197,7 @@ def get_percentages(question_id):
     conn = get_db_connection()
     cursor = conn.cursor()
     cursor.execute('''
-        SELECT option_index, count FROM question_stats WHERE question_id = ?
+        SELECT option_index, count FROM question_stats WHERE question_id = %s
     ''', (question_id,))
     rows = cursor.fetchall()
 
