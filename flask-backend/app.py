@@ -71,7 +71,6 @@ def submit_score():
 
     return jsonify({"message": "Score saved successfully"}), 200
 
-
 @app.route('/leaderboard', methods=['GET'])
 def get_leaderboard():
     conn = get_db_connection()
@@ -82,7 +81,6 @@ def get_leaderboard():
 
     leaderboard = [{"name": name, "score": score} for name, score in results]
     return jsonify(leaderboard)
-
 
 @app.route('/login', methods=['POST'])
 def login():
@@ -153,7 +151,6 @@ def all_leaderboard():
 
     full_data = [{"id": row[0], "name": row[1], "score": row[2]} for row in results]
     return jsonify(full_data), 200
-    
 
 @app.route('/submit-option', methods=['POST'])
 def submit_option():
