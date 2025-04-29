@@ -152,6 +152,15 @@ def all_leaderboard():
     full_data = [{"id": row[0], "name": row[1], "score": row[2]} for row in results]
     return jsonify(full_data), 200
 
+@app.route('/get-leaderboard', methods=['GET'])
+def get_leaderboard():
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute('SELECT name, score FROM leaderboard ORDER BY score DESC LIMIT 5')
+    leaderboard = [{'name': row[0], 'score': row[1]} for row in cursor.fetchall()]
+    conn.close()
+    return jsonify(leaderboard)
+
 @app.route('/submit-option', methods=['POST'])
 def submit_option():
     data = request.get_json()
