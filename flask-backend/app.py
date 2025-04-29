@@ -65,7 +65,16 @@ def submit_score():
 
     conn = get_db_connection()
     cursor = conn.cursor()
-    cursor.execute("INSERT INTO leaderboard (name, score) VALUES (%s, %s)", (name, score))
+    # Yeh line ADD karo
+    cursor.execute("SELECT * FROM leaderboard WHERE username = %s", (name,))
+    existing = cursor.fetchone()
+
+    if existing:
+        # Agar user pehle se hai, toh score update karo
+        cursor.execute("UPDATE leaderboard SET score = %s WHERE username = %s", (score, name))
+    else:
+        # Agar user nahi mila, toh naya insert karo
+        cursor.execute("INSERT INTO leaderboard (username, score) VALUES (%s, %s)", (name, score))
     conn.commit()
     conn.close()
 
