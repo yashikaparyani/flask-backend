@@ -225,6 +225,7 @@ def get_percentages(question_id):
     percentages.get("2", 0),
     percentages.get("3", 0)])
 
+
 @app.route('/view-stats')
 def view_stats():
     conn = get_db_connection()
