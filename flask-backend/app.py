@@ -192,34 +192,6 @@ def submit_option():
     'existing_row': bool(row)
     })
 
-@app.route('/update-score', methods=['POST'])
-def update_score():
-    data = request.get_json()
-    name = data.get('name')
-    score = data.get('score')
-
-    if not name or score is None:
-        return jsonify({"error": "Missing name or score"}), 400
-
-    conn = get_db_connection()
-    cursor = conn.cursor()
-
-    # Check if user already exists in leaderboard
-    cursor.execute("SELECT * FROM leaderboard WHERE name = %s", (name,))
-    result = cursor.fetchone()
-
-    if result:
-        # Update existing score
-        cursor.execute("UPDATE leaderboard SET score = %s WHERE name = %s", (score, name))
-    else:
-        # Insert new user with current score (could be 0)
-        cursor.execute("INSERT INTO leaderboard (name, score) VALUES (%s, %s)", (name, score))
-
-    conn.commit()
-    conn.close()
-
-    return jsonify({"message": "Score updated successfully"}), 200
-
 @app.route('/get-percentages/<int:question_id>', methods=['GET'])
 def get_percentages(question_id):
     conn = get_db_connection()
