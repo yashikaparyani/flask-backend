@@ -71,25 +71,6 @@ def submit_score():
 
     return jsonify({"message": "Score saved successfully"}), 200
 
-@app.route('/init-score', methods=['POST'])
-def init_score():
-    data = request.get_json()
-    name = data.get('name')
-
-    if not name:
-        return jsonify({"error": "Missing name"}), 400
-
-    conn = get_db_connection()
-    cursor = conn.cursor()
-
-    # Check if the name already exists
-    cursor.execute("SELECT * FROM leaderboard WHERE name = %s", (name,))
-    if cursor.fetchone() is None:
-        cursor.execute("INSERT INTO leaderboard (name, score) VALUES (%s, %s)", (name, 0))
-        conn.commit()
-
-    conn.close()
-    return jsonify({"message": "Initial score set to 0"}), 200
 
 @app.route('/leaderboard', methods=['GET'])
 def get_leaderboard():
@@ -101,30 +82,6 @@ def get_leaderboard():
 
     leaderboard = [{"name": name, "score": score} for name, score in results]
     return jsonify(leaderboard)
-
-@app.route('/update-score', methods=['POST'])
-def update_score():
-    data = request.get_json()
-    name = data.get('name')
-    score = data.get('score')
-
-    if not name or score is None:
-        return jsonify({"error": "Missing name or score"}), 400
-
-    conn = get_db_connection()
-    cursor = conn.cursor()
-
-    cursor.execute("SELECT * FROM leaderboard WHERE name = %s", (name,))
-    existing = cursor.fetchone()
-
-    if existing:
-        cursor.execute("UPDATE leaderboard SET score = %s WHERE name = %s", (score, name))
-    else:
-        cursor.execute("INSERT INTO leaderboard (name, score) VALUES (%s, %s)", (name, score))
-
-    conn.commit()
-    conn.close()
-    return jsonify({"message": "Score updated"}), 200
 
 
 @app.route('/login', methods=['POST'])
