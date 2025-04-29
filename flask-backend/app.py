@@ -224,6 +224,17 @@ def view_stats():
     conn.close()
     return jsonify(data)
 
+@app.route('/live-scores', methods=['GET'])
+def live_scores():
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT name, score FROM leaderboard ORDER BY score DESC LIMIT 10")
+    data = cursor.fetchall()
+    conn.close()
+
+    scores = [{'name': row[0], 'score': row[1]} for row in data]
+    return jsonify(scores)
+
 
 
 if __name__== '__main__':
