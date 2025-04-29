@@ -235,6 +235,28 @@ def live_scores():
     scores = [{'name': row[0], 'score': row[1]} for row in data]
     return jsonify(scores)
 
+@app.route('/update-live-score', methods=['POST'])
+def update_live_score():
+    data = request.get_json()
+    name = data.get('name')
+    score = data.get('score')
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    # Agar naam already leaderboard mein hai, toh update karo
+    cursor.execute('SELECT * FROM leaderboard WHERE name = %s', (name,))
+    existing = cursor.fetchone()
+
+    if existing:
+        cursor.execute('UPDATE leaderboard SET score = %s WHERE name = %s', (score, name))
+    else:
+        cursor.execute('INSERT INTO leaderboard (name, score) VALUES (%s, %s)', (name, score))
+
+    conn.commit()
+    conn.close()
+    return jsonify({'message': 'Live score updated'})
+
 
 
 if __name__== '__main__':
