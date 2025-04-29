@@ -71,6 +71,26 @@ def submit_score():
 
     return jsonify({"message": "Score saved successfully"}), 200
 
+@app.route('/init-score', methods=['POST'])
+def init_score():
+    data = request.get_json()
+    name = data.get('name')
+
+    if not name:
+        return jsonify({"error": "Missing name"}), 400
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    # Check if the name already exists
+    cursor.execute("SELECT * FROM leaderboard WHERE name = %s", (name,))
+    if cursor.fetchone() is None:
+        cursor.execute("INSERT INTO leaderboard (name, score) VALUES (%s, %s)", (name, 0))
+        conn.commit()
+
+    conn.close()
+    return jsonify({"message": "Initial score set to 0"}), 200
+
 @app.route('/leaderboard', methods=['GET'])
 def get_leaderboard():
     conn = get_db_connection()
