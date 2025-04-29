@@ -160,6 +160,7 @@ def get_live_leaderboard():
     cursor.execute("SELECT name, score FROM leaderboard ORDER BY score DESC LIMIT 5")
     top_scores = cursor.fetchall()
 
+
     conn.close()
 
     leaderboard = [{'name': row[0], 'score': row[1]} for row in top_scores]
