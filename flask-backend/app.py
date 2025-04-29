@@ -78,6 +78,7 @@ def submit_score():
     conn.commit()
     conn.close()
 
+
     return jsonify({"message": "Score saved successfully"}), 200
 
 @app.route('/leaderboard', methods=['GET'])
