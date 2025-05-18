@@ -7,7 +7,7 @@ import os
 from flask_socketio import SocketIO, emit
 import eventlet
 
-
+DATABASE_URL = ("postgresql://quiz_db_qn4s_user:WDkEjvHhgKfV8JYNfz0Us8eFcwn528C7@dpg-d07r13idbo4c73bqmg90-a/quiz_db_qn4s")
 app = Flask(__name__)
 CORS(app, origins=["https://qconnecttt.netlify.app"])
 socketio = SocketIO(app, cors_allowed_origins="*")
