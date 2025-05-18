@@ -37,7 +37,7 @@ def init_db():
             name TEXT NOT NULL,
             email TEXT NOT NULL UNIQUE,
             password TEXT NOT NULL,
-            phone TEXT NOT NULL
+            phone TEXT NOT NULL,
             is_admin BOOLEAN DEFAULT FALSE
         )
     ''')
