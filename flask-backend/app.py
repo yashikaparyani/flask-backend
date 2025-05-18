@@ -1,21 +1,19 @@
 from flask import Flask, request, jsonify
-from flask_socketio import SocketIO, emit
-import eventlet
 from flask_cors import CORS
 from werkzeug.security import generate_password_hash , check_password_hash
 import psycopg2
 from psycopg2 import IntegrityError
 import os
 
-eventlet.monkey_patch()
 app = Flask(__name__)
 CORS(app, origins=["https://qconnecttt.netlify.app"])
-socketio = SocketIO(app,cors_allowed_origins="*" , async_mode='eventlet')
-connected_users = []
 
-db_url = os.getenv("DATABASE_URL") or "postgresql://username:password@host:port/dbname"
 def get_db_connection():
-    return psycopg2.connect(db_url)
+    DATABASE_URL = os.environ.get('DATABASE_URL')
+    if not DATABASE_URL:
+        raise Exception("DATABASE_URL ENVIRONMENT VARIABLE NOT SET")
+    conn =psycopg2.connect(DATABASE_URL)
+    return conn
 
 def init_db():
     conn = get_db_connection()
@@ -79,7 +77,7 @@ def submit_score():
         cursor.execute("INSERT INTO leaderboard (username, score) VALUES (%s, %s)", (name, score))
     conn.commit()
     conn.close()
-    socketio.emit('leaderboard_update',{'name' : name , 'score' : score})
+
 
     return jsonify({"message": "Score saved successfully"}), 200
 
@@ -195,7 +193,6 @@ def submit_option():
 
     conn.commit()
     conn.close()
-    socketio.emit('option_update', {'question_id': question_id})
 
     return jsonify({
     'status': 'success',
@@ -269,7 +266,6 @@ def update_live_score():
 
     conn.commit()
     conn.close()
-    socketio.emit('leaderboard_update',{'name' : name , 'score' : score})
     return jsonify({'message': 'Live score updated'})
 
 
@@ -278,4 +274,4 @@ if __name__== '__main__':
     init_db()
     from os import environ
     port = int(environ.get("PORT", 5000))
-    socketio.run(app,host='0.0.0.0', port=port)
+    app.run(host='0.0.0.0', port=port)
