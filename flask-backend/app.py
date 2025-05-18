@@ -4,14 +4,9 @@ from werkzeug.security import generate_password_hash , check_password_hash
 import psycopg2
 from psycopg2 import IntegrityError
 import os
-from flask_socketio import SocketIO, emit
-import eventlet
 
-
-os.environ.setdefault("DATABASE_URL", "postgresql://quiz_db_qn4s_user:WDkEjvHhgKfV8JYNfz0Us8eFcwn528C7@dpg-d07r13idbo4c73bqmg90-a.oregon-postgres.render.com/quiz_db_qn4s")
 app = Flask(__name__)
 CORS(app, origins=["https://qconnecttt.netlify.app"])
-socketio = SocketIO(app, cors_allowed_origins="*")
 
 def get_db_connection():
     DATABASE_URL = os.environ.get('DATABASE_URL')
@@ -37,8 +32,7 @@ def init_db():
             name TEXT NOT NULL,
             email TEXT NOT NULL UNIQUE,
             password TEXT NOT NULL,
-            phone TEXT NOT NULL,
-            is_admin BOOLEAN DEFAULT FALSE
+            phone TEXT NOT NULL
         )
     ''')
     cursor.execute('''
@@ -60,21 +54,6 @@ init_db()
 def home():
     return "FLASK APP CONNECTED "
 
-@socketio.on('connect')
-def handle_connect():
-    print('User connected')
-
-@socketio.on('start_quiz')
-def handle_start_quiz():
-    # For example, send first question to all users
-    question = {'id': 1, 'text': 'What is 2 + 2?', 'options': ['2','3','4','5']}
-    emit('new_question', question, broadcast=True)
-
-@socketio.on('submit_answer')
-def handle_submit_answer(data):
-    print(f"Answer from user: {data}")
-
-
 @app.route('/leaderboard', methods=['POST'])
 def submit_score():
     data = request.get_json()
@@ -87,15 +66,15 @@ def submit_score():
     conn = get_db_connection()
     cursor = conn.cursor()
     # Yeh line ADD karo
-    cursor.execute("SELECT * FROM leaderboard WHERE name = %s", (name,))
+    cursor.execute("SELECT * FROM leaderboard WHERE username = %s", (name,))
     existing = cursor.fetchone()
 
     if existing:
         # Agar user pehle se hai, toh score update karo
-        cursor.execute("UPDATE leaderboard SET score = %s WHERE name = %s", (score, name))
+        cursor.execute("UPDATE leaderboard SET score = %s WHERE username = %s", (score, name))
     else:
         # Agar user nahi mila, toh naya insert karo
-        cursor.execute("INSERT INTO leaderboard (name, score) VALUES (%s, %s)", (name, score))
+        cursor.execute("INSERT INTO leaderboard (username, score) VALUES (%s, %s)", (name, score))
     conn.commit()
     conn.close()
 
@@ -124,10 +103,10 @@ def login():
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
-        cursor.execute("SELECT id, name, is_admin, password FROM users WHERE email=%s ", (email, ))
+        cursor.execute("SELECT * FROM users WHERE email =%s",(email,))
         user = cursor.fetchone()
         conn.close()
-        if user and check_password_hash(user[2], password):
+        if user and check_password_hash(user[3], password):
             return jsonify({'success': True,"message": "Login successful"}), 200
         else:
             return jsonify({'success': False,"message": "Invalid email or password"}), 400
@@ -289,15 +268,10 @@ def update_live_score():
     conn.close()
     return jsonify({'message': 'Live score updated'})
 
-@socketio.on('start_quiz')
-def handle_start_quiz(data):
-    question = data.get('question')  # should include question & options
-    emit('show_question', question, broadcast=True)
-
 
 
 if __name__== '__main__':
     init_db()
     from os import environ
     port = int(environ.get("PORT", 5000))
-    socketio.run(app, host='0.0.0.0', port=5000)
+    app.run(host='0.0.0.0', port=port)
