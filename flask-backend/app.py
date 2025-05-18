@@ -13,13 +13,9 @@ CORS(app, origins=["https://qconnecttt.netlify.app"])
 socketio = SocketIO(app,cors_allowed_origins="*" , async_mode='eventlet')
 connected_users = []
 
-
+db_url = os.getenv("DATABASE_URL") or "postgresql://username:password@host:port/dbname"
 def get_db_connection():
-    DATABASE_URL = os.environ.get('DATABASE_URL')
-    if not DATABASE_URL:
-        raise Exception("DATABASE_URL ENVIRONMENT VARIABLE NOT SET")
-    conn =psycopg2.connect(DATABASE_URL)
-    return conn
+    return psycopg2.connect(db_url)
 
 def init_db():
     conn = get_db_connection()
