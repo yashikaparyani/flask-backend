@@ -60,6 +60,21 @@ init_db()
 def home():
     return "FLASK APP CONNECTED "
 
+@socketio.on('connect')
+def handle_connect():
+    print('User connected')
+
+@socketio.on('start_quiz')
+def handle_start_quiz():
+    # For example, send first question to all users
+    question = {'id': 1, 'text': 'What is 2 + 2?', 'options': ['2','3','4','5']}
+    emit('new_question', question, broadcast=True)
+
+@socketio.on('submit_answer')
+def handle_submit_answer(data):
+    print(f"Answer from user: {data}")
+    
+
 @app.route('/leaderboard', methods=['POST'])
 def submit_score():
     data = request.get_json()
