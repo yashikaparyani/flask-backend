@@ -4,9 +4,13 @@ from werkzeug.security import generate_password_hash , check_password_hash
 import psycopg2
 from psycopg2 import IntegrityError
 import os
+from flask_socketio import SocketIO, emit
+import eventlet
+
 
 app = Flask(__name__)
 CORS(app, origins=["https://qconnecttt.netlify.app"])
+socketio = SocketIO(app, cors_allowed_origins="*")
 
 def get_db_connection():
     DATABASE_URL = os.environ.get('DATABASE_URL')
@@ -33,6 +37,7 @@ def init_db():
             email TEXT NOT NULL UNIQUE,
             password TEXT NOT NULL,
             phone TEXT NOT NULL
+            is_admin BOOLEAN DEFAULT FALSE
         )
     ''')
     cursor.execute('''
@@ -103,7 +108,7 @@ def login():
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
-        cursor.execute("SELECT * FROM users WHERE email =%s",(email,))
+        cursor.execute("SELECT id, name, is_admin FROM users WHERE email=%s AND password=%s", (email, password))
         user = cursor.fetchone()
         conn.close()
         if user and check_password_hash(user[3], password):
@@ -268,10 +273,15 @@ def update_live_score():
     conn.close()
     return jsonify({'message': 'Live score updated'})
 
+@socketio.on('start_quiz')
+def handle_start_quiz(data):
+    question = data.get('question')  # should include question & options
+    emit('show_question', question, broadcast=True)
+
 
 
 if __name__== '__main__':
     init_db()
     from os import environ
     port = int(environ.get("PORT", 5000))
-    app.run(host='0.0.0.0', port=port)
+    socketio.run(app, host='0.0.0.0', port=5000)
