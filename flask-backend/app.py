@@ -87,15 +87,15 @@ def submit_score():
     conn = get_db_connection()
     cursor = conn.cursor()
     # Yeh line ADD karo
-    cursor.execute("SELECT * FROM leaderboard WHERE username = %s", (name,))
+    cursor.execute("SELECT * FROM leaderboard WHERE name = %s", (name,))
     existing = cursor.fetchone()
 
     if existing:
         # Agar user pehle se hai, toh score update karo
-        cursor.execute("UPDATE leaderboard SET score = %s WHERE username = %s", (score, name))
+        cursor.execute("UPDATE leaderboard SET score = %s WHERE name = %s", (score, name))
     else:
         # Agar user nahi mila, toh naya insert karo
-        cursor.execute("INSERT INTO leaderboard (username, score) VALUES (%s, %s)", (name, score))
+        cursor.execute("INSERT INTO leaderboard (name, score) VALUES (%s, %s)", (name, score))
     conn.commit()
     conn.close()
 
@@ -124,7 +124,7 @@ def login():
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
-        cursor.execute("SELECT id, name, is_admin FROM users WHERE email=%s ", (email, ))
+        cursor.execute("SELECT id, name, is_admin, password FROM users WHERE email=%s ", (email, ))
         user = cursor.fetchone()
         conn.close()
         if user and check_password_hash(user[2], password):
