@@ -73,7 +73,7 @@ def handle_start_quiz():
 @socketio.on('submit_answer')
 def handle_submit_answer(data):
     print(f"Answer from user: {data}")
-    
+
 
 @app.route('/leaderboard', methods=['POST'])
 def submit_score():
@@ -124,10 +124,10 @@ def login():
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
-        cursor.execute("SELECT id, name, is_admin FROM users WHERE email=%s AND password=%s", (email, password))
+        cursor.execute("SELECT id, name, is_admin FROM users WHERE email=%s ", (email, ))
         user = cursor.fetchone()
         conn.close()
-        if user and check_password_hash(user[3], password):
+        if user and check_password_hash(user[2], password):
             return jsonify({'success': True,"message": "Login successful"}), 200
         else:
             return jsonify({'success': False,"message": "Invalid email or password"}), 400
