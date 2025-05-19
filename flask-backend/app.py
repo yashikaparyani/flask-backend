@@ -30,6 +30,16 @@ def on_start_quiz(data=None):
 def on_next_question(data):
     # Admin emits this to move to next question
     try:
+        if not data or 'questionData' not in data:
+            return {'success': False, 'message': 'Invalid question data format'}
+            
+        # Validate question data structure
+        question_data = data['questionData']
+        required_fields = ['question', 'options', 'answer']
+        if not all(field in question_data for field in required_fields):
+            return {'success': False, 'message': 'Missing required fields in question data'}
+            
+        # Emit the question update to all clients in the quiz room
         emit('question_update', data, room='quiz_room')
         return {'success': True, 'message': 'Question updated successfully'}
     except Exception as e:
