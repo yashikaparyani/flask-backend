@@ -5,12 +5,14 @@ import psycopg2
 from psycopg2 import IntegrityError
 import os
 from flask_socketio import SocketIO, emit, join_room
+import eventlet
 
+eventlet.monkey_patch()
 
 app = Flask(__name__)
-CORS(app, supports_credentials=True)
-app.config['CORS_HEADERS'] = 'Content-Type'
-socketio = SocketIO(app, cors_allowed_origins="*")
+CORS(app, supports_credentials=True, origins=["https://qconnecttt.netlify.app"])
+
+socketio = SocketIO(app, cors_allowed_origins=["https://qconnecttt.netlify.app"])
 
 @socketio.on('join')
 def on_join(data):

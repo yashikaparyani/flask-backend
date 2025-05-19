@@ -1,6 +1,6 @@
-flask==2.3.2
-flask-cors
+Flask==2.3.2
+Flask-Cors
 gunicorn
 psycopg2-binary
-flask_socketio
-eventlet
+Flask_SocketIO==5.3.6
+eventlet==0.33.3
