@@ -254,17 +254,19 @@ def get_percentages(question_id):
 
     total = sum(count for _, count in rows)
     if total == 0:
-        return jsonify({})  # No data yet
+        # Return array of zeros if no data
+        return jsonify([0, 0, 0, 0])
 
-    percentages = {
-        str(option_index): round((count / total) * 100, 2)
-        for option_index, count in rows
-    }
+    # Initialize percentages array with zeros
+    percentages = [0, 0, 0, 0]
+    
+    # Calculate percentages for each option
+    for option_index, count in rows:
+        if option_index < 4:  # Ensure we only process valid option indices
+            percentages[option_index] = round((count / total) * 100, 2)
 
-    return jsonify([percentages.get("0", 0),
-    percentages.get("1", 0),
-    percentages.get("2", 0),
-    percentages.get("3", 0)])
+    conn.close()
+    return jsonify(percentages)
 
 
 @app.route('/view-stats')
@@ -280,12 +282,23 @@ def view_stats():
 def live_scores():
     conn = get_db_connection()
     cursor = conn.cursor()
-    cursor.execute("SELECT name, score FROM leaderboard ORDER BY score DESC LIMIT 10")
-    data = cursor.fetchall()
-    conn.close()
-
-    scores = [{'name': row[0], 'score': row[1]} for row in data]
-    return jsonify(scores)
+    try:
+        # Get top 10 scores, ordered by score descending
+        cursor.execute("""
+            SELECT name, score 
+            FROM leaderboard 
+            ORDER BY score DESC 
+            LIMIT 10
+        """)
+        data = cursor.fetchall()
+        
+        # Format the response
+        scores = [{'name': row[0], 'score': row[1]} for row in data]
+        return jsonify(scores)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    finally:
+        conn.close()
 
 @app.route('/update-live-score', methods=['POST'])
 def update_live_score():
@@ -293,21 +306,32 @@ def update_live_score():
     name = data.get('name')
     score = data.get('score')
 
+    if not name or score is None:
+        return jsonify({'error': 'Missing name or score'}), 400
+
     conn = get_db_connection()
     cursor = conn.cursor()
 
-    # Agar naam already leaderboard mein hai, toh update karo
-    cursor.execute('SELECT * FROM leaderboard WHERE name = %s', (name,))
-    existing = cursor.fetchone()
+    try:
+        # Check if user exists in leaderboard
+        cursor.execute('SELECT * FROM leaderboard WHERE name = %s', (name,))
+        existing = cursor.fetchone()
 
-    if existing:
-        cursor.execute('UPDATE leaderboard SET score = %s WHERE name = %s', (score, name))
-    else:
-        cursor.execute('INSERT INTO leaderboard (name, score) VALUES (%s, %s)', (name, score))
+        if existing:
+            # Update score if it's higher than existing score
+            if score > existing[2]:  # existing[2] is the current score
+                cursor.execute('UPDATE leaderboard SET score = %s WHERE name = %s', (score, name))
+        else:
+            # Insert new score
+            cursor.execute('INSERT INTO leaderboard (name, score) VALUES (%s, %s)', (name, score))
 
-    conn.commit()
-    conn.close()
-    return jsonify({'message': 'Live score updated'})
+        conn.commit()
+        return jsonify({'message': 'Live score updated successfully'})
+    except Exception as e:
+        conn.rollback()
+        return jsonify({'error': str(e)}), 500
+    finally:
+        conn.close()
 
 if __name__== '__main__':
     init_db()
