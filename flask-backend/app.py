@@ -128,10 +128,9 @@ def login():
         user = cursor.fetchone()
         conn.close()
         if user and check_password_hash(user[3], password):
-            role = user[5]
             return jsonify({'success': True,
                             "email": user[2],
-                            "role": user[5],
+                            "role": "admin" if user[2] == "yashikaparyani29@gmail.com" else "user",
                             "username" : user[1]
                             }), 200
         else:
