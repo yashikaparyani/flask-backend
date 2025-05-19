@@ -29,7 +29,12 @@ def on_start_quiz(data=None):
 @socketio.on('next_question')
 def on_next_question(data):
     # Admin emits this to move to next question
-    emit('question_update', data, room='quiz_room')
+    try:
+        emit('question_update', data, room='quiz_room')
+        return {'success': True, 'message': 'Question updated successfully'}
+    except Exception as e:
+        print(f"Error in next_question: {str(e)}")
+        return {'success': False, 'message': str(e)}
 
 def get_db_connection():
     DATABASE_URL = os.environ.get('DATABASE_URL')
