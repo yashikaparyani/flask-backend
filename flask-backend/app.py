@@ -6,6 +6,8 @@ from psycopg2 import IntegrityError
 import os
 from flask_socketio import SocketIO, emit, join_room
 import eventlet
+from questions import questions 
+
 
 eventlet.monkey_patch()
 
@@ -27,9 +29,12 @@ def on_start_quiz(data=None):
     emit('quiz_started', data or {} ,room='quiz_room')
 
 @socketio.on('next_question')
-def on_next_question(data):
-    # Admin emits this to move to next question
-    emit('question_update', data, room='quiz_room')
+def handle_next_question(data):
+    index = data.get("index")
+    if 0 <= index < len(questions):
+        emit('question_update', {'questionData': questions[index]}, broadcast=True)
+    else:
+        emit('quiz_end', {}, broadcast=True)
 
 def get_db_connection():
     DATABASE_URL = os.environ.get('DATABASE_URL')
