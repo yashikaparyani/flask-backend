@@ -103,6 +103,10 @@ def submit_score():
     if name is None or score is None:
         return jsonify({"error": "Missing name or score"}), 400
 
+    # Validate score
+    if score > total_questions:
+        return jsonify({"error": f"Score cannot exceed total questions ({total_questions})"}), 400
+
     conn = get_db_connection()
     cursor = conn.cursor()
     try:
@@ -111,8 +115,8 @@ def submit_score():
         existing = cursor.fetchone()
 
         if existing:
-            # Update score if new score is higher
-            if score > existing[2]:  # existing[2] is the current score
+            # Update score if new score is higher and valid
+            if score > existing[2] and score <= total_questions:  # existing[2] is the current score
                 cursor.execute("UPDATE leaderboard SET score = %s WHERE name = %s", (score, name))
         else:
             # Insert new score
@@ -336,9 +340,14 @@ def update_live_score():
     data = request.get_json()
     name = data.get('name')
     score = data.get('score')
+    total_questions = data.get('total_questions', 10)  # Default to 10 if not provided
 
     if not name or score is None:
         return jsonify({'error': 'Missing name or score'}), 400
+
+    # Validate score
+    if score > total_questions:
+        return jsonify({'error': f'Score cannot exceed total questions ({total_questions})'}), 400
 
     conn = get_db_connection()
     cursor = conn.cursor()
@@ -349,15 +358,15 @@ def update_live_score():
         existing = cursor.fetchone()
 
         if existing:
-            # Update score if it's higher than existing score
-            if score > existing[2]:  # existing[2] is the current score
+            # Update score if it's higher and valid
+            if score > existing[2] and score <= total_questions:
                 cursor.execute('UPDATE leaderboard SET score = %s WHERE name = %s', (score, name))
         else:
             # Insert new score
             cursor.execute('INSERT INTO leaderboard (name, score) VALUES (%s, %s)', (name, score))
 
         conn.commit()
-        return jsonify({'message': 'Live score updated successfully'})
+        return jsonify({'message': 'Live score updated'})
     except Exception as e:
         conn.rollback()
         return jsonify({'error': str(e)}), 500
