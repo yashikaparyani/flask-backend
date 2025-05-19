@@ -53,7 +53,8 @@ def init_db():
             name TEXT NOT NULL,
             email TEXT NOT NULL UNIQUE,
             password TEXT NOT NULL,
-            phone TEXT NOT NULL
+            phone TEXT NOT NULL,
+            role TEXT DEFAULT 'user'
         )
     ''')
     cursor.execute('''
@@ -128,7 +129,7 @@ def login():
             role = user[5]
             return jsonify({'success': True,
                             "message": "Login successful",
-                            "role": role,
+                            "role": user[5],
                             "username" : user[1]
                             }), 200
         else:
@@ -151,7 +152,8 @@ def signup():
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
-        cursor.execute("INSERT INTO users (name, email, password,phone) VALUES (%s, %s, %s, %s)", (name, email, hashed_password, phone))
+        role = data.get('role','user')
+        cursor.execute("INSERT INTO users (name, email, password,phone,role) VALUES (%s, %s, %s, %s,%s)", (name, email, hashed_password, phone, role))
         print(f"saved user: {name},{email},{phone}")
         conn.commit()
         conn.close()
