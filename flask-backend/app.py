@@ -22,9 +22,9 @@ def on_join(data):
     emit('message', {'msg': f'{username} joined the room'}, room=room)
 
 @socketio.on('start_quiz')
-def on_start_quiz(data):
+def on_start_quiz(data=None):
     # Admin emits this to start quiz
-    emit('quiz_started', data, room='quiz_room')
+    emit('quiz_started', data or {} ,room='quiz_room')
 
 @socketio.on('next_question')
 def on_next_question(data):
