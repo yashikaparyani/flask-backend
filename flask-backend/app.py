@@ -21,14 +21,22 @@ def on_join(data):
     join_room(room)
     emit('message', {'msg': f'{username} joined the room'}, room=room)
 
+@socketio.on('admin-join')
+def on_admin_join(data):
+    print(f"Admin joined: {data.get('username')}")
+    join_room('quiz_room')
+
 @socketio.on('start_quiz')
 def on_start_quiz(data=None):
-    # Admin emits this to start quiz
-    emit('quiz_started', data or {} ,room='quiz_room')
+    print("Quiz started")
+    emit('quiz_started', data or {}, room='quiz_room')
 
 @socketio.on('next_question')
 def on_next_question(data):
-    # Admin emits this to move to next question
+    print(f"Next question requested: {data}")
+    if not data or 'questionData' not in data:
+        print("Invalid question data received")
+        return
     emit('question_update', data, room='quiz_room')
 
 def get_db_connection():
