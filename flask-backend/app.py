@@ -128,7 +128,7 @@ def login():
         if user and check_password_hash(user[3], password):
             role = user[5]
             return jsonify({'success': True,
-                            "message": "Login successful",
+                            "email": user[2],
                             "role": user[5],
                             "username" : user[1]
                             }), 200
