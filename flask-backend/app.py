@@ -98,35 +98,66 @@ def submit_score():
     data = request.get_json()
     name = data.get('name')
     score = data.get('score')
+    total_questions = data.get('total_questions', 10)  # Default to 10 if not provided
 
     if name is None or score is None:
         return jsonify({"error": "Missing name or score"}), 400
 
     conn = get_db_connection()
     cursor = conn.cursor()
-    cursor.execute("SELECT * FROM leaderboard WHERE name = %s", (name,))
-    existing = cursor.fetchone()
+    try:
+        # Check if user exists
+        cursor.execute("SELECT * FROM leaderboard WHERE name = %s", (name,))
+        existing = cursor.fetchone()
 
-    if existing:
-        cursor.execute("UPDATE leaderboard SET score = %s WHERE username = %s", (score, name))
-    else:
-        cursor.execute("INSERT INTO leaderboard (username, score) VALUES (%s, %s)", (name, score))
-    conn.commit()
-    conn.close()
+        if existing:
+            # Update score if new score is higher
+            if score > existing[2]:  # existing[2] is the current score
+                cursor.execute("UPDATE leaderboard SET score = %s WHERE name = %s", (score, name))
+        else:
+            # Insert new score
+            cursor.execute("INSERT INTO leaderboard (name, score) VALUES (%s, %s)", (name, score))
 
-
-    return jsonify({"message": "Score saved successfully"}), 200
+        conn.commit()
+        return jsonify({
+            "message": "Score saved successfully",
+            "name": name,
+            "score": score,
+            "total_questions": total_questions
+        }), 200
+    except Exception as e:
+        conn.rollback()
+        return jsonify({"error": str(e)}), 500
+    finally:
+        conn.close()
 
 @app.route('/leaderboard', methods=['GET'])
 def get_leaderboard():
     conn = get_db_connection()
     cursor = conn.cursor()
-    cursor.execute("SELECT name, score FROM leaderboard ORDER BY score DESC LIMIT 10")
-    results = cursor.fetchall()
-    conn.close()
-
-    leaderboard = [{"name": name, "score": score} for name, score in results]
-    return jsonify(leaderboard)
+    try:
+        # Get all scores ordered by score descending
+        cursor.execute("""
+            SELECT name, score 
+            FROM leaderboard 
+            ORDER BY score DESC
+        """)
+        results = cursor.fetchall()
+        
+        # Format the response with rankings
+        leaderboard = []
+        for rank, (name, score) in enumerate(results, 1):
+            leaderboard.append({
+                "rank": rank,
+                "name": name,
+                "score": score
+            })
+            
+        return jsonify(leaderboard)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    finally:
+        conn.close()
 
 @app.route('/login', methods=['POST'])
 def login():
