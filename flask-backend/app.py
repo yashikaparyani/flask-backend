@@ -4,9 +4,29 @@ from werkzeug.security import generate_password_hash , check_password_hash
 import psycopg2
 from psycopg2 import IntegrityError
 import os
+from flask_socketio import SocketIO, emit, join_room
+
 
 app = Flask(__name__)
 CORS(app, origins=["https://qconnecttt.netlify.app"])
+socketio = SocketIO(app, cors_allowed_origins="*")
+
+@socketio.on('join')
+def on_join(data):
+    username = data['username']
+    room = data.get('room', 'quiz_room')
+    join_room(room)
+    emit('message', {'msg': f'{username} joined the room'}, room=room)
+
+@socketio.on('start_quiz')
+def on_start_quiz(data):
+    # Admin emits this to start quiz
+    emit('quiz_started', data, room='quiz_room')
+
+@socketio.on('next_question')
+def on_next_question(data):
+    # Admin emits this to move to next question
+    emit('question_update', data, room='quiz_room')
 
 def get_db_connection():
     DATABASE_URL = os.environ.get('DATABASE_URL')
@@ -65,15 +85,12 @@ def submit_score():
 
     conn = get_db_connection()
     cursor = conn.cursor()
-    # Yeh line ADD karo
-    cursor.execute("SELECT * FROM leaderboard WHERE username = %s", (name,))
+    cursor.execute("SELECT * FROM leaderboard WHERE name = %s", (name,))
     existing = cursor.fetchone()
 
     if existing:
-        # Agar user pehle se hai, toh score update karo
         cursor.execute("UPDATE leaderboard SET score = %s WHERE username = %s", (score, name))
     else:
-        # Agar user nahi mila, toh naya insert karo
         cursor.execute("INSERT INTO leaderboard (username, score) VALUES (%s, %s)", (name, score))
     conn.commit()
     conn.close()
@@ -107,7 +124,12 @@ def login():
         user = cursor.fetchone()
         conn.close()
         if user and check_password_hash(user[3], password):
-            return jsonify({'success': True,"message": "Login successful"}), 200
+            role = user[5]
+            return jsonify({'success': True,
+                            "message": "Login successful",
+                            "role": role,
+                            "username" : user[1]
+                            }), 200
         else:
             return jsonify({'success': False,"message": "Invalid email or password"}), 400
     except Exception as e:
@@ -267,8 +289,6 @@ def update_live_score():
     conn.commit()
     conn.close()
     return jsonify({'message': 'Live score updated'})
-
-
 
 if __name__== '__main__':
     init_db()
