@@ -4,7 +4,7 @@ from werkzeug.security import generate_password_hash , check_password_hash
 import psycopg2
 from psycopg2 import IntegrityError
 import os
-from flask_socketio import SocketIO, emit, join_room
+from flask_socketio import SocketIO, emit, join_room, leave_room
 import eventlet
 
 eventlet.monkey_patch()
@@ -14,13 +14,29 @@ CORS(app, supports_credentials=True, origins=["https://qconnecttt.netlify.app"])
 
 socketio = SocketIO(app, cors_allowed_origins=["https://qconnecttt.netlify.app"])
 
+# Track connected users and their answers
+connected_users = set()
+current_answers = {}
+
+@socketio.on('connect')
+def handle_connect():
+    print(f"Client connected: {request.sid}")
+
+@socketio.on('disconnect')
+def handle_disconnect():
+    if request.sid in connected_users:
+        connected_users.remove(request.sid)
+    emit('user_count', {'count': len(connected_users)}, room='quiz_room')
+
 @socketio.on('join')
 def on_join(data):
     username = data['username']
     room = data.get('room', 'quiz_room')
     join_room(room)
+    connected_users.add(request.sid)
     print(f"{username} joined room: {room}")
     emit('message', {'msg': f'{username} joined the room'}, room=room)
+    emit('user_count', {'count': len(connected_users)}, room=room)
 
 @socketio.on('admin-join')
 def on_admin_join(data):
@@ -32,6 +48,7 @@ def on_admin_join(data):
 @socketio.on('start_quiz')
 def on_start_quiz(data=None):
     print("Quiz started")
+    current_answers.clear()  # Clear previous answers
     emit('quiz_started', data or {}, room='quiz_room')
 
 @socketio.on('next_question')
@@ -40,6 +57,7 @@ def on_next_question(data):
     if not data or 'questionData' not in data:
         print("Invalid question data received")
         return
+    current_answers.clear()  # Clear answers for new question
     emit('question_update', data, room='quiz_room')
 
 def get_db_connection():
@@ -204,12 +222,14 @@ def submit_option():
     data = request.get_json()
     question_id = data.get('question_id')
     option_index = data.get('option_index')
+    user_id = request.sid
 
+    if question_id is not None and option_index is not None:
+        current_answers[user_id] = option_index
 
     conn = get_db_connection()
     cursor = conn.cursor()
 
-    # Check if entry already exists
     cursor.execute('''
         SELECT count FROM question_stats
         WHERE question_id = %s AND option_index = %s
@@ -232,11 +252,11 @@ def submit_option():
     conn.close()
 
     return jsonify({
-    'status': 'success',
-    'step': 'submitted',
-    'question_id': question_id,
-    'option_index': option_index,
-    'existing_row': bool(row)
+        'status': 'success',
+        'step': 'submitted',
+        'question_id': question_id,
+        'option_index': option_index,
+        'existing_row': bool(row)
     })
 
 @app.route('/get-percentages/<int:question_id>', methods=['GET'])
