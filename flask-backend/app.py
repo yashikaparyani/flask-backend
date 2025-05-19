@@ -19,12 +19,15 @@ def on_join(data):
     username = data['username']
     room = data.get('room', 'quiz_room')
     join_room(room)
+    print(f"{username} joined room: {room}")
     emit('message', {'msg': f'{username} joined the room'}, room=room)
 
 @socketio.on('admin-join')
 def on_admin_join(data):
-    print(f"Admin joined: {data.get('username')}")
+    username = data.get('username', 'Admin')
     join_room('quiz_room')
+    print(f"Admin {username} joined quiz room")
+    emit('message', {'msg': f'Admin {username} joined the room'}, room='quiz_room')
 
 @socketio.on('start_quiz')
 def on_start_quiz(data=None):
