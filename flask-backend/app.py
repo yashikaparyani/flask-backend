@@ -10,7 +10,7 @@ import eventlet
 eventlet.monkey_patch()
 
 app = Flask(__name__)
-CORS(app, supports_credentials=True, origins=["https://qconnecttt.netlify.app"])
+CORS(app, supports_credentials=True, origins=["https://qconnecttt.netlify.app"], resources={r"/": {"origins": ""}})
 
 socketio = SocketIO(app, cors_allowed_origins=["https://qconnecttt.netlify.app"])
 
