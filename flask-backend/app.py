@@ -8,7 +8,8 @@ from flask_socketio import SocketIO, emit, join_room
 
 
 app = Flask(__name__)
-CORS(app, origins=["https://qconnecttt.netlify.app"])
+CORS(app, supports_credentials=True)
+app.config['CORS_HEADERS'] = 'Content-Type'
 socketio = SocketIO(app, cors_allowed_origins="*")
 
 @socketio.on('join')
