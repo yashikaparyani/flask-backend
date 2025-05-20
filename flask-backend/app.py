@@ -289,19 +289,17 @@ def get_percentages(question_id):
 
     total = sum(count for _, count in rows)
     if total == 0:
-        # Return array of zeros if no data
-        return jsonify([0, 0, 0, 0])
+        return jsonify({})  # No data yet
 
-    # Initialize percentages array with zeros
-    percentages = [0, 0, 0, 0]
-    
-    # Calculate percentages for each option
-    for option_index, count in rows:
-        if option_index < 4:  # Ensure we only process valid option indices
-            percentages[option_index] = round((count / total) * 100, 2)
+    percentages = {
+        str(option_index): round((count / total) * 100, 2)
+        for option_index, count in rows
+    }
 
-    conn.close()
-    return jsonify(percentages)
+    return jsonify([percentages.get("0", 0),
+    percentages.get("1", 0),
+    percentages.get("2", 0),
+    percentages.get("3", 0)])
 
 
 @app.route('/view-stats')
