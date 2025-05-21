@@ -6,6 +6,7 @@ from psycopg2 import IntegrityError
 import os
 from flask_socketio import SocketIO, emit, join_room
 import eventlet
+import re
 
 eventlet.monkey_patch()
 
