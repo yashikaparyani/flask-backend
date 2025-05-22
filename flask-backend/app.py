@@ -4,7 +4,7 @@ from werkzeug.security import generate_password_hash , check_password_hash
 import psycopg2
 from psycopg2 import IntegrityError
 import os
-from flask_socketio import SocketIO, emit, join_room
+from flask_socketio import SocketIO, emit, join_room, leave_room
 import eventlet
 import re
 
@@ -15,12 +15,38 @@ CORS(app, supports_credentials=True, origins=["https://qconnecttt.netlify.app"])
 
 socketio = SocketIO(app, cors_allowed_origins=["https://qconnecttt.netlify.app"])
 
+# Store connected clients
+connected_clients = {}
+
+@socketio.on('connect')
+def handle_connect():
+    print('Client connected')
+
+@socketio.on('disconnect')
+def handle_disconnect():
+    # Find and remove the disconnected client
+    for username, sid in list(connected_clients.items()):
+        if sid == request.sid:
+            del connected_clients[username]
+            emit('client_disconnected', {'username': username}, broadcast=True)
+            break
+
 @socketio.on('join')
 def on_join(data):
     username = data['username']
     room = data.get('room', 'quiz_room')
     join_room(room)
+    # Store the client's socket ID with their username
+    connected_clients[username] = request.sid
+    # Notify admin about new client
+    emit('client_connected', {'username': username}, broadcast=True)
     emit('message', {'msg': f'{username} joined the room'}, room=room)
+
+@socketio.on('admin-join')
+def on_admin_join(data):
+    # Send current connected clients to admin
+    for username in connected_clients.keys():
+        emit('client_connected', {'username': username})
 
 @socketio.on('start_quiz')
 def on_start_quiz(data=None):
