@@ -36,10 +36,11 @@ def on_join(data):
     username = data['username']
     room = data.get('room', 'quiz_room')
     join_room(room)
-    # Store the client's socket ID with their username
-    connected_clients[username] = request.sid
-    # Notify admin about new client
-    emit('client_connected', {'username': username}, broadcast=True)
+    # Only add non-guest users to connected_clients
+    if username and username.lower() != 'guest':
+        connected_clients[username] = request.sid
+        # Notify admin about new client
+        emit('client_connected', {'username': username}, broadcast=True)
     emit('message', {'msg': f'{username} joined the room'}, room=room)
 
 @socketio.on('admin-join')
