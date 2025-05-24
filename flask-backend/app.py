@@ -4,10 +4,8 @@ from werkzeug.security import generate_password_hash , check_password_hash
 import psycopg2
 from psycopg2 import IntegrityError
 import os
-from flask_socketio import SocketIO, emit, join_room, leave_room
+from flask_socketio import SocketIO, emit, join_room
 import eventlet
-import re
-import time
 
 eventlet.monkey_patch()
 
@@ -16,39 +14,12 @@ CORS(app, supports_credentials=True, origins=["https://qconnecttt.netlify.app"])
 
 socketio = SocketIO(app, cors_allowed_origins=["https://qconnecttt.netlify.app"])
 
-# Store connected clients
-connected_clients = {}
-
-@socketio.on('connect')
-def handle_connect():
-    print('Client connected')
-
-@socketio.on('disconnect')
-def handle_disconnect():
-    # Find and remove the disconnected client
-    for username, sid in list(connected_clients.items()):
-        if sid == request.sid:
-            del connected_clients[username]
-            emit('client_disconnected', {'username': username}, broadcast=True)
-            break
-
 @socketio.on('join')
 def on_join(data):
     username = data['username']
     room = data.get('room', 'quiz_room')
     join_room(room)
-    # Only add non-guest users to connected_clients
-    if username and username.lower() != 'guest':
-        connected_clients[username] = request.sid
-        # Notify admin about new client
-        emit('client_connected', {'username': username}, broadcast=True)
     emit('message', {'msg': f'{username} joined the room'}, room=room)
-
-@socketio.on('admin-join')
-def on_admin_join(data):
-    # Send current connected clients to admin
-    for username in connected_clients.keys():
-        emit('client_connected', {'username': username})
 
 @socketio.on('start_quiz')
 def on_start_quiz(data=None):
@@ -76,87 +47,45 @@ def on_next_question(data):
         return {'success': False, 'message': str(e)}
 
 def get_db_connection():
-    try:
-        # Explicit connection parameters
-        conn_params = {
-            'dbname': 'postgres',
-            'user': 'postgres',
-            'password': 'codewithME@1234',
-            'host': 'db.roqityejizopzbczcbee.supabase.co',
-            'port': '5432',
-            'sslmode': 'require',
-            'connect_timeout': 10,
-            'application_name': 'quiz_app'
-        }
-        
-        print("Attempting to connect to database...")
-        conn = psycopg2.connect(**conn_params)
-        print("Database connection successful")
-        return conn
-    except psycopg2.OperationalError as e:
-        print(f"Database connection error: {str(e)}")
-        print("Connection parameters used:", {k: v if k != 'password' else '****' for k, v in conn_params.items()})
-        raise Exception(f"Could not connect to database: {str(e)}")
-    except Exception as e:
-        print(f"Unexpected error: {str(e)}")
-        raise
+    DATABASE_URL = os.environ.get('DATABASE_URL')
+    if not DATABASE_URL:
+        raise Exception("DATABASE_URL ENVIRONMENT VARIABLE NOT SET")
+    conn =psycopg2.connect(DATABASE_URL)
+    return conn
 
 def init_db():
-    max_retries = 3
-    retry_count = 0
+    conn = get_db_connection()
+    cursor = conn.cursor()
     
-    while retry_count < max_retries:
-        try:
-            print(f"Database initialization attempt {retry_count + 1} of {max_retries}")
-            conn = get_db_connection()
-            cursor = conn.cursor()
-            
-            # Test the connection
-            print("Testing database connection...")
-            cursor.execute('SELECT version();')
-            version = cursor.fetchone()
-            print(f"Connected to PostgreSQL version: {version[0]}")
-            
-            print("Creating tables if they don't exist...")
-            cursor.execute('''
-                CREATE TABLE IF NOT EXISTS leaderboard (
-                    id SERIAL PRIMARY KEY,
-                    name TEXT NOT NULL,
-                    score INTEGER NOT NULL
-                )
-            ''')
-            cursor.execute('''
-                CREATE TABLE IF NOT EXISTS users (
-                    id SERIAL PRIMARY KEY,
-                    name TEXT NOT NULL,
-                    email TEXT NOT NULL UNIQUE,
-                    password TEXT NOT NULL,
-                    phone TEXT NOT NULL,
-                    role TEXT DEFAULT 'user'
-                )
-            ''')
-            cursor.execute('''
-                CREATE TABLE IF NOT EXISTS question_stats (
-                    question_id INTEGER,
-                    option_index INTEGER,
-                    count INTEGER DEFAULT 0,
-                    PRIMARY KEY (question_id, option_index)
-                )
-            ''')
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS leaderboard (
+            id SERIAL PRIMARY KEY ,
+            name TEXT NOT NULL,
+            score INTEGER NOT NULL
+        )
+    ''')
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS users (
+            id SERIAL PRIMARY KEY ,
+            name TEXT NOT NULL,
+            email TEXT NOT NULL UNIQUE,
+            password TEXT NOT NULL,
+            phone TEXT NOT NULL,
+            role TEXT DEFAULT 'user'
+        )
+    ''')
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS question_stats (
+            question_id INTEGER,
+            option_index INTEGER,
+            count INTEGER DEFAULT 0,
+            PRIMARY KEY (question_id, option_index)
+        )
+    ''')
 
-            conn.commit()
-            cursor.close()
-            conn.close()
-            print("Database initialization successful")
-            return
-        except Exception as e:
-            retry_count += 1
-            print(f"Database initialization attempt {retry_count} failed: {str(e)}")
-            if retry_count == max_retries:
-                print("Max retries reached. Database initialization failed.")
-                raise
-            print(f"Waiting 5 seconds before retry {retry_count + 1}...")
-            time.sleep(5)  # Wait 5 seconds before retrying
+    conn.commit()
+    cursor.close()
+    conn.close()
 
 init_db()
 
@@ -169,70 +98,35 @@ def submit_score():
     data = request.get_json()
     name = data.get('name')
     score = data.get('score')
-    total_questions = data.get('total_questions', 10)  # Default to 10 if not provided
 
     if name is None or score is None:
         return jsonify({"error": "Missing name or score"}), 400
 
-    # Validate score
-    if score > total_questions:
-        return jsonify({"error": f"Score cannot exceed total questions ({total_questions})"}), 400
-
     conn = get_db_connection()
     cursor = conn.cursor()
-    try:
-        # Check if user exists
-        cursor.execute("SELECT * FROM leaderboard WHERE name = %s", (name,))
-        existing = cursor.fetchone()
+    cursor.execute("SELECT * FROM leaderboard WHERE name = %s", (name,))
+    existing = cursor.fetchone()
 
-        if existing:
-            # Update score if new score is higher and valid
-            if score > existing[2] and score <= total_questions:  # existing[2] is the current score
-                cursor.execute("UPDATE leaderboard SET score = %s WHERE name = %s", (score, name))
-        else:
-            # Insert new score
-            cursor.execute("INSERT INTO leaderboard (name, score) VALUES (%s, %s)", (name, score))
+    if existing:
+        cursor.execute("UPDATE leaderboard SET score = %s WHERE username = %s", (score, name))
+    else:
+        cursor.execute("INSERT INTO leaderboard (username, score) VALUES (%s, %s)", (name, score))
+    conn.commit()
+    conn.close()
 
-        conn.commit()
-        return jsonify({
-            "message": "Score saved successfully",
-            "name": name,
-            "score": score,
-            "total_questions": total_questions
-        }), 200
-    except Exception as e:
-        conn.rollback()
-        return jsonify({"error": str(e)}), 500
-    finally:
-        conn.close()
+
+    return jsonify({"message": "Score saved successfully"}), 200
 
 @app.route('/leaderboard', methods=['GET'])
 def get_leaderboard():
     conn = get_db_connection()
     cursor = conn.cursor()
-    try:
-        # Get all scores ordered by score descending
-        cursor.execute("""
-            SELECT name, score 
-            FROM leaderboard 
-            ORDER BY score DESC
-        """)
-        results = cursor.fetchall()
-        
-        # Format the response with rankings
-        leaderboard = []
-        for rank, (name, score) in enumerate(results, 1):
-            leaderboard.append({
-                "rank": rank,
-                "name": name,
-                "score": score
-            })
-            
-        return jsonify(leaderboard)
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-    finally:
-        conn.close()
+    cursor.execute("SELECT name, score FROM leaderboard ORDER BY score DESC LIMIT 10")
+    results = cursor.fetchall()
+    conn.close()
+
+    leaderboard = [{"name": name, "score": score} for name, score in results]
+    return jsonify(leaderboard)
 
 @app.route('/login', methods=['POST'])
 def login():
@@ -360,19 +254,17 @@ def get_percentages(question_id):
 
     total = sum(count for _, count in rows)
     if total == 0:
-        return jsonify([0, 0, 0, 0])  # No data yet, show 0% for all options
+        return jsonify({})  # No data yet
 
     percentages = {
         str(option_index): round((count / total) * 100, 2)
         for option_index, count in rows
     }
 
-    return jsonify([
-        percentages.get("0", 0),
-        percentages.get("1", 0),
-        percentages.get("2", 0),
-        percentages.get("3", 0)
-    ])
+    return jsonify([percentages.get("0", 0),
+    percentages.get("1", 0),
+    percentages.get("2", 0),
+    percentages.get("3", 0)])
 
 
 @app.route('/view-stats')
@@ -388,61 +280,34 @@ def view_stats():
 def live_scores():
     conn = get_db_connection()
     cursor = conn.cursor()
-    try:
-        # Get top 10 scores, ordered by score descending
-        cursor.execute("""
-            SELECT name, score 
-            FROM leaderboard 
-            ORDER BY score DESC 
-            LIMIT 10
-        """)
-        data = cursor.fetchall()
-        
-        # Format the response
-        scores = [{'name': row[0], 'score': row[1]} for row in data]
-        return jsonify(scores)
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-    finally:
-        conn.close()
+    cursor.execute("SELECT name, score FROM leaderboard ORDER BY score DESC LIMIT 10")
+    data = cursor.fetchall()
+    conn.close()
+
+    scores = [{'name': row[0], 'score': row[1]} for row in data]
+    return jsonify(scores)
 
 @app.route('/update-live-score', methods=['POST'])
 def update_live_score():
     data = request.get_json()
     name = data.get('name')
     score = data.get('score')
-    total_questions = data.get('total_questions', 10)  # Default to 10 if not provided
-
-    if not name or score is None:
-        return jsonify({'error': 'Missing name or score'}), 400
-
-    # Validate score
-    if score > total_questions:
-        return jsonify({'error': f'Score cannot exceed total questions ({total_questions})'}), 400
 
     conn = get_db_connection()
     cursor = conn.cursor()
 
-    try:
-        # Check if user exists in leaderboard
-        cursor.execute('SELECT * FROM leaderboard WHERE name = %s', (name,))
-        existing = cursor.fetchone()
+    # Agar naam already leaderboard mein hai, toh update karo
+    cursor.execute('SELECT * FROM leaderboard WHERE name = %s', (name,))
+    existing = cursor.fetchone()
 
-        if existing:
-            # Update score if it's higher and valid
-            if score > existing[2] and score <= total_questions:
-                cursor.execute('UPDATE leaderboard SET score = %s WHERE name = %s', (score, name))
-        else:
-            # Insert new score
-            cursor.execute('INSERT INTO leaderboard (name, score) VALUES (%s, %s)', (name, score))
+    if existing:
+        cursor.execute('UPDATE leaderboard SET score = %s WHERE name = %s', (score, name))
+    else:
+        cursor.execute('INSERT INTO leaderboard (name, score) VALUES (%s, %s)', (name, score))
 
-        conn.commit()
-        return jsonify({'message': 'Live score updated'})
-    except Exception as e:
-        conn.rollback()
-        return jsonify({'error': str(e)}), 500
-    finally:
-        conn.close()
+    conn.commit()
+    conn.close()
+    return jsonify({'message': 'Live score updated'})
 
 if __name__== '__main__':
     init_db()
