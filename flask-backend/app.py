@@ -23,23 +23,19 @@ def on_join(data):
 
 @socketio.on('start_quiz')
 def on_start_quiz(data=None):
-    # Admin emits this to start quiz
     emit('quiz_started', data or {} ,room='quiz_room')
 
 @socketio.on('next_question')
 def on_next_question(data):
-    # Admin emits this to move to next question
     try:
         if not data or 'questionData' not in data:
             return {'success': False, 'message': 'Invalid question data format'}
             
-        # Validate question data structure
         question_data = data['questionData']
         required_fields = ['question', 'options', 'answer']
         if not all(field in question_data for field in required_fields):
             return {'success': False, 'message': 'Missing required fields in question data'}
             
-        # Emit the question update to all clients in the quiz room
         emit('question_update', data, room='quiz_room')
         return {'success': True, 'message': 'Question updated successfully'}
     except Exception as e:
@@ -108,12 +104,11 @@ def submit_score():
     existing = cursor.fetchone()
 
     if existing:
-        cursor.execute("UPDATE leaderboard SET score = %s WHERE username = %s", (score, name))
+        cursor.execute("UPDATE leaderboard SET score = %s WHERE name = %s", (score, name))
     else:
-        cursor.execute("INSERT INTO leaderboard (username, score) VALUES (%s, %s)", (name, score))
+        cursor.execute("INSERT INTO leaderboard (name, score) VALUES (%s, %s)", (name, score))
     conn.commit()
     conn.close()
-
 
     return jsonify({"message": "Score saved successfully"}), 200
 
@@ -209,11 +204,9 @@ def submit_option():
     question_id = data.get('question_id')
     option_index = data.get('option_index')
 
-
     conn = get_db_connection()
     cursor = conn.cursor()
 
-    # Check if entry already exists
     cursor.execute('''
         SELECT count FROM question_stats
         WHERE question_id = %s AND option_index = %s
@@ -236,11 +229,11 @@ def submit_option():
     conn.close()
 
     return jsonify({
-    'status': 'success',
-    'step': 'submitted',
-    'question_id': question_id,
-    'option_index': option_index,
-    'existing_row': bool(row)
+        'status': 'success',
+        'step': 'submitted',
+        'question_id': question_id,
+        'option_index': option_index,
+        'existing_row': bool(row)
     })
 
 @app.route('/get-percentages/<int:question_id>', methods=['GET'])
