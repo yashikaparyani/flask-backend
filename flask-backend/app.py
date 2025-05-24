@@ -7,6 +7,7 @@ import os
 from flask_socketio import SocketIO, emit, join_room, leave_room
 import eventlet
 import re
+import time
 
 eventlet.monkey_patch()
 
@@ -75,45 +76,77 @@ def on_next_question(data):
         return {'success': False, 'message': str(e)}
 
 def get_db_connection():
-    DATABASE_URL = os.environ.get('DATABASE_URL')
-    if not DATABASE_URL:
-        raise Exception("DATABASE_URL ENVIRONMENT VARIABLE NOT SET")
-    conn =psycopg2.connect(DATABASE_URL)
-    return conn
+    try:
+        DATABASE_URL = os.environ.get('DATABASE_URL')
+        if not DATABASE_URL:
+            raise Exception("DATABASE_URL ENVIRONMENT VARIABLE NOT SET")
+        
+        # Parse the connection string to handle special characters
+        conn_params = {
+            'dbname': 'postgres',
+            'user': 'postgres',
+            'password': 'codewithME@1234',
+            'host': 'db.roqityejizopzbczcbee.supabase.co',
+            'port': '5432',
+            'sslmode': 'require'  # Required for Supabase
+        }
+        
+        conn = psycopg2.connect(**conn_params)
+        return conn
+    except psycopg2.OperationalError as e:
+        print(f"Database connection error: {str(e)}")
+        raise Exception(f"Could not connect to database: {str(e)}")
+    except Exception as e:
+        print(f"Unexpected error: {str(e)}")
+        raise
 
 def init_db():
-    conn = get_db_connection()
-    cursor = conn.cursor()
+    max_retries = 3
+    retry_count = 0
     
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS leaderboard (
-            id SERIAL PRIMARY KEY ,
-            name TEXT NOT NULL,
-            score INTEGER NOT NULL
-        )
-    ''')
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS users (
-            id SERIAL PRIMARY KEY ,
-            name TEXT NOT NULL,
-            email TEXT NOT NULL UNIQUE,
-            password TEXT NOT NULL,
-            phone TEXT NOT NULL,
-            role TEXT DEFAULT 'user'
-        )
-    ''')
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS question_stats (
-            question_id INTEGER,
-            option_index INTEGER,
-            count INTEGER DEFAULT 0,
-            PRIMARY KEY (question_id, option_index)
-        )
-    ''')
+    while retry_count < max_retries:
+        try:
+            conn = get_db_connection()
+            cursor = conn.cursor()
+            
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS leaderboard (
+                    id SERIAL PRIMARY KEY,
+                    name TEXT NOT NULL,
+                    score INTEGER NOT NULL
+                )
+            ''')
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS users (
+                    id SERIAL PRIMARY KEY,
+                    name TEXT NOT NULL,
+                    email TEXT NOT NULL UNIQUE,
+                    password TEXT NOT NULL,
+                    phone TEXT NOT NULL,
+                    role TEXT DEFAULT 'user'
+                )
+            ''')
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS question_stats (
+                    question_id INTEGER,
+                    option_index INTEGER,
+                    count INTEGER DEFAULT 0,
+                    PRIMARY KEY (question_id, option_index)
+                )
+            ''')
 
-    conn.commit()
-    cursor.close()
-    conn.close()
+            conn.commit()
+            cursor.close()
+            conn.close()
+            print("Database initialization successful")
+            return
+        except Exception as e:
+            retry_count += 1
+            print(f"Database initialization attempt {retry_count} failed: {str(e)}")
+            if retry_count == max_retries:
+                print("Max retries reached. Database initialization failed.")
+                raise
+            time.sleep(2)  # Wait 2 seconds before retrying
 
 init_db()
 
