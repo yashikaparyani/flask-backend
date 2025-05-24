@@ -77,24 +77,25 @@ def on_next_question(data):
 
 def get_db_connection():
     try:
-        DATABASE_URL = os.environ.get('DATABASE_URL')
-        if not DATABASE_URL:
-            raise Exception("DATABASE_URL ENVIRONMENT VARIABLE NOT SET")
-        
-        # Parse the connection string to handle special characters
+        # Explicit connection parameters
         conn_params = {
             'dbname': 'postgres',
             'user': 'postgres',
             'password': 'codewithME@1234',
             'host': 'db.roqityejizopzbczcbee.supabase.co',
             'port': '5432',
-            'sslmode': 'require'  # Required for Supabase
+            'sslmode': 'require',
+            'connect_timeout': 10,
+            'application_name': 'quiz_app'
         }
         
+        print("Attempting to connect to database...")
         conn = psycopg2.connect(**conn_params)
+        print("Database connection successful")
         return conn
     except psycopg2.OperationalError as e:
         print(f"Database connection error: {str(e)}")
+        print("Connection parameters used:", {k: v if k != 'password' else '****' for k, v in conn_params.items()})
         raise Exception(f"Could not connect to database: {str(e)}")
     except Exception as e:
         print(f"Unexpected error: {str(e)}")
@@ -106,9 +107,17 @@ def init_db():
     
     while retry_count < max_retries:
         try:
+            print(f"Database initialization attempt {retry_count + 1} of {max_retries}")
             conn = get_db_connection()
             cursor = conn.cursor()
             
+            # Test the connection
+            print("Testing database connection...")
+            cursor.execute('SELECT version();')
+            version = cursor.fetchone()
+            print(f"Connected to PostgreSQL version: {version[0]}")
+            
+            print("Creating tables if they don't exist...")
             cursor.execute('''
                 CREATE TABLE IF NOT EXISTS leaderboard (
                     id SERIAL PRIMARY KEY,
@@ -146,7 +155,8 @@ def init_db():
             if retry_count == max_retries:
                 print("Max retries reached. Database initialization failed.")
                 raise
-            time.sleep(2)  # Wait 2 seconds before retrying
+            print(f"Waiting 5 seconds before retry {retry_count + 1}...")
+            time.sleep(5)  # Wait 5 seconds before retrying
 
 init_db()
 
